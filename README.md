@@ -1,7 +1,8 @@
 # Perceptual decision making - Random Dots
 **Inhibitory Recurrent Neural Networks for Cognitive**
 
-So far only for RT version
+
+`So far only for RT version`
 
 Xiaohe Xue
 
@@ -29,7 +30,9 @@ interval in this fashion was essential for training on the RT task. When the ons
 
 ### Data Generating
 -[ ] Train
+
 -[ ] Validation
+
 -[ ] Test
 
 ### RNN Construction (NetWork Layer) 
