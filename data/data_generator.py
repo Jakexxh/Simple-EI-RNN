@@ -1,7 +1,6 @@
 import tensorflow as tf
 import pathlib
 import matplotlib.pyplot as plt
-import pandas as pd
 import random
 import numpy as np
 from main import SGD_p
@@ -11,7 +10,7 @@ RT_FIX_T_MEAN = 700
 RT_REWARD_DELAY_T = 300
 TRIAL_T = 3000  # TODO: may change
 LOW_VALUE = 0.2
-HIGH_VALUE = 1.0
+HIGH_VALUE = 1.2
 CHOICE_MAP = [0, 1]
 
 
@@ -23,14 +22,13 @@ class DataGenerator:
         # self.choice =
         self.cohs = [0.032, 0.064, 0.128, 0.256, 0.512]
         self.fix_t = 0.
-        self.stim_t = 0.
         self.ct_portion = 0.1  # self.p.ct_portion
         self.dt = SGD_p['train_t_step']
         self.trial_len = int(TRIAL_T / self.dt)
 
         if self.p.task_version == 'rt':
             if self.p.action == 'train':
-                self.trial_fun = self.rt_train_trial
+                self.trial_fun = self.single_rt_train_trial
                 self.fix_t = self.rt_mk_fix_t()
                 self.step_flag = {
                     'fixation': (0, int(self.fix_t / self.dt)),
@@ -42,7 +40,7 @@ class DataGenerator:
 
         elif self.p.task_version == 'fd':
             if self.p.action == 'train':
-                self.trial_fun = self.fd_train_trial
+                self.trial_fun = self.single_rt_train_trial
             else:
                 pass
 
@@ -69,8 +67,13 @@ class DataGenerator:
                 outputs[choice][step] = HIGH_VALUE
                 outputs[1 - choice][step] = LOW_VALUE
 
+        return {'choice': choice, 'coh': coh}, inputs, outputs
+
     def single_fd_train_trial(self):
-        pass
+        inputs = np.zeros((2, self.trial_len))
+        outputs = np.ones((2, self.trial_len)) * LOW_VALUE
+
+        return 'catch_trial', inputs, outputs
 
     def rt_mk_fix_t(self):
         return np.random.exponential(RT_FIX_T_MEAN) // SGD_p['train_t_step'] * SGD_p['train_t_step']
