@@ -10,7 +10,7 @@ Xiaohe Xue
 
 > In the RT task, the choice targets were displayed for a variable interval before 
 the onset of the motion stimulus. The duration of this prestimulus interval was randomly selected 
-from an exponential distribution (mean  700 msec). This randomization served to discourage 
+from an exponential distribution (mean 700 msec). This randomization served to discourage 
 anticipation of the onset of the motion stimulus. We found that randomization of the prestimulus 
 interval in this fashion was essential for training on the RT task. When the onset of the stimulus
  was predictable, RT was faster than in these experiments and varied less across the range of 
