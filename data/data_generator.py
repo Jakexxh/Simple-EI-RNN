@@ -5,14 +5,16 @@ import util.util_funs as funs
 import random
 import numpy as np
 from main import SGD_p
+import sys
 
 np.set_printoptions(precision=5)
 RT_FIX_T_MEAN = 700
 RT_REWARD_DELAY_T = 300
 TRIAL_T = 3000  # TODO: may change
 LOW_VALUE = 0.2
-HIGH_VALUE = 1.2
+HIGH_VALUE = 1.0
 CHOICE_MAP = [0, 1]
+CATCH_TRIAL_RATIO = 0.2
 
 
 class DataGenerator:
@@ -20,17 +22,17 @@ class DataGenerator:
     def __init__(self, rnn_p):
         self.p = rnn_p
 
-        # self.choice =
         self.cohs = [0.032, 0.064, 0.128, 0.256, 0.512]
         self.fix_t = 0.
         self.ct_portion = 0.1  # self.p.ct_portion
         self.dt = SGD_p['train_t_step']
         self.trial_len = int(TRIAL_T / self.dt)
+        self.batch_size = SGD_p['minibatch_size']
 
-        if self.p.task_version == 'rt':
-            if self.p.action == 'train':
+        if self.p['task_version'] == 'rt':
+            if self.p['action'] == 'train':
                 self.alpha = SGD_p['train_t_step'] / SGD_p['tau']
-                self.trial_fun = self.single_rt_train_trial
+                self.single_trial_fun = self.single_rt_train_trial
                 self.fix_t = self.rt_mk_fix_t()
                 self.step_flag = {
                     'fixation': (0, int(self.fix_t / self.dt)),
@@ -41,9 +43,9 @@ class DataGenerator:
                 self.alpha = SGD_p['test_t_step'] / SGD_p['tau']
                 pass
 
-        elif self.p.task_version == 'fd':
-            if self.p.action == 'train':
-                self.trial_fun = self.single_rt_train_trial
+        elif self.p['task_version'] == 'fd':
+            if self.p['action'] == 'train':
+                self.single_trial_fun = self.single_rt_train_trial
             else:
                 pass
 
@@ -60,12 +62,12 @@ class DataGenerator:
 
         inputs = np.zeros((2, self.trial_len))
         outputs = np.zeros((2, self.trial_len))
-        masks = np.zeros((1, self.trial_len))
+        masks = np.zeros(self.trial_len)
 
         for step in range(self.trial_len):
 
             if step < self.step_flag['fixation'][1]:
-                outputs[step, :] = LOW_VALUE
+                outputs[:, step] = LOW_VALUE
                 masks[step] = 1
 
             if step >= self.step_flag['stimulus'][0]:
@@ -93,12 +95,13 @@ class DataGenerator:
 
     def rt_mk_fix_t(self, truncate=300):
         def exp_fun(): return np.random.exponential(RT_FIX_T_MEAN) // SGD_p['train_t_step'] * SGD_p['train_t_step']
+
         fix_t = exp_fun()
 
-        while not(RT_FIX_T_MEAN-truncate <= fix_t <= RT_FIX_T_MEAN+truncate):
+        while not (RT_FIX_T_MEAN - truncate <= fix_t <= RT_FIX_T_MEAN + truncate):
             fix_t = exp_fun()
 
-        return exp_fun
+        return fix_t
 
     def make_data(self):
         pass
@@ -107,7 +110,7 @@ class DataGenerator:
         return (1 + coh) / 2
 
     def input_noise(self):
-        return (1 / self.alpha) + np.sqrt(2 * self.alpha * SGD_p['input_noise_std'] ** 2) * np.random.normal()
+        return (1 / self.alpha) * np.sqrt(2 * self.alpha * SGD_p['input_noise_std'] ** 2) * np.random.normal()
 
     def __iter__(self):
         return self
@@ -116,7 +119,38 @@ class DataGenerator:
         """
         generate trials and update iteration flag
 
-        :return: desc, train trial, label trial
+        :return:
         """
+        ctrial_num = int(self.batch_size * CATCH_TRIAL_RATIO)
 
-        pass
+        trials = []
+
+        for num in range(self.batch_size):
+            if num < ctrial_num:
+                trials.append(self.single_catch_trial())
+            else:
+                trials.append(self.single_trial_fun())
+
+        random.shuffle(trials)
+
+        decs = []
+        masks = []
+        inputs_list = []
+        outputs_list = []
+
+        for row in trials:
+            decs.append(row[0])
+            masks.append(row[1])
+            inputs_list.append(row[2])
+            outputs_list.append(row[3])
+
+        return decs, masks, tf.data.Dataset.from_tensor_slices(inputs_list),\
+               tf.data.Dataset.from_tensor_slices(outputs_list)
+
+
+## TEST ##
+# dg = DataGenerator({'task_version':'rt', 'action': 'train'})
+# a = next(dg)
+# print(a)
+# for elem in a[2]:
+#   print(elem.numpy()) #print inputs list

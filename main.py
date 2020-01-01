@@ -6,7 +6,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-tv", "--task_version", default='rt', help="rt/fd")
 parser.add_argument("-e_num", "--epoch_num", default=10e3, help="num of epochs for training")
 
+
 args = parser.parse_args()
+args = vars(args)
+
 
 SGD_p = {
     'lr': 0.01,
