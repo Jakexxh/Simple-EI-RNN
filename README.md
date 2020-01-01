@@ -30,14 +30,16 @@ interval in this fashion was essential for training on the RT task. When the ons
 -[x] Parameters
 
 ### Data Generating
--[ ] Train
+-[x] Train
 
 -[ ] Validation
 
 -[ ] Test
 
 ### RNN Construction (NetWork Layer) 
--[ ] Test
+-[ ] Weights init
+-[ ] Add connectivity
+-[ ] call function
 
 ### NetWork Model & SGD
  
