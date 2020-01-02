@@ -23,6 +23,10 @@ interval in this fashion was essential for training on the RT task. When the ons
 -   Response of neurons in the lateral intraparietal area during a combined visual
   discrimination reaction time task.J. D. Roitman & M. N. Shadlen, JNS 2002. http://www.jneurosci.org/content/22/21/9475.abstract
 
+Weights Init
+
+- https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.97.188104
+- https://papers.nips.cc/paper/5336-analog-memories-in-a-balanced-rate-based-network-of-e-i-neurons-supplemental.zip
 ## Todo
 
 ### General
