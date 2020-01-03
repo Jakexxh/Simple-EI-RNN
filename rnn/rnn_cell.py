@@ -14,6 +14,7 @@ class EIRNNCell(keras.layers.Layer):
 
     def __init__(self, **kwargs):
         self.units = UNITS_SIZE
+        self.state_size = self.units
         self.ei_ratio = EI_RATIO
         self.rho = SGD_p['ini_spe_r']
 
@@ -27,6 +28,7 @@ class EIRNNCell(keras.layers.Layer):
         self._M_rec = None
         self._W_fixed = None
         self._M_rec_m = None
+        self._W_rec_plastic_m = None
         self._W_fixed_m = None
 
         self.rec_scale = None
@@ -62,7 +64,7 @@ class EIRNNCell(keras.layers.Layer):
                                            trainable=False)
 
         if W_fixed is None:
-            self._W_fixed_m = np.zeros(self.units, self.units)
+            self._W_fixed_m = np.zeros((self.units, self.units))
             self._W_fixed = self.add_weight(shape=(self.units, self.units),
                                             initializer=tf.constant_initializer(self._W_fixed_m),
                                             name='W_fixed',
@@ -91,27 +93,18 @@ class EIRNNCell(keras.layers.Layer):
         self.is_built = True
 
     def call(self, inputs, states):
-        prev_output = states[0]
-        h = K.dot(inputs, self.kernel)
-        output = h + K.dot(prev_output, self.recurrent_kernel)
-        return output, [output]
+        x_prev = states[0]
+        x = ((1 - self.alpha) * x_prev) + \
+            self.alpha * (
+                K.dot(K.relu(x_prev), K.dot(self.W_rec, self.Dale_rec)) +
+                K.dot(inputs, self.W_in) +
+                K.sqrt(K.constant(2.0 * self.alpha * SGD_p['rr_noise_std']**2)) *
+                    K.random_normal(K.shape(x_prev)))
 
-    # def run_timestep(self, rnn_in, state):
-    #     new_state = ((1 - self.alpha) * state) \
-    #                 + self.alpha * (
-    #                         tf.matmul(
-    #                             self.transfer_function(state),
-    #                             self.get_effective_W_rec(),
-    #                             transpose_b=True, name="1")
-    #                         + tf.matmul(
-    #                     rnn_in,
-    #                     self.get_effective_W_in(),
-    #                     transpose_b=True, name="2")
-    #                         + self.b_rec) \
-    #                 + tf.sqrt(2.0 * self.alpha * self.rec_noise * self.rec_noise) \
-    #                 * tf.random_normal(tf.shape(state), mean=0.0, stddev=1.0)
-    #
-    #     return new_state
+        r = K.relu(x)
+        z = K.dot(r, self.W_out)
+        return z, [x]
+
     def glorot_uniform(self, scale=1.0):
         limits = np.sqrt(6 / (self.units + self.units))
         uniform = np.random.uniform(-limits,limits,(self.units,self.units)) * scale
@@ -124,33 +117,10 @@ class EIRNNCell(keras.layers.Layer):
     #     return tf.constant_initializer(init)
 
 
-# class MinimalRNNCell(keras.layers.Layer):
+# Test
 #
-#     def __init__(self, units, **kwargs):
-#         self.units = units
-#         self.state_size = units
-#         super(MinimalRNNCell, self).__init__(**kwargs)
-#
-#     def build(self, input_shape):
-#         self.kernel = self.add_weight(shape=(input_shape[-1], self.units),
-#                                       initializer='uniform',
-#                                       name='kernel')
-#         self.recurrent_kernel = self.add_weight(
-#             shape=(self.units, self.units),
-#             initializer='uniform',
-#             name='recurrent_kernel')
-#         self.built = True
-#
-#     def call(self, inputs, states):
-#         prev_output = states[0]
-#         h = K.dot(inputs, self.kernel)
-#         output = h + K.dot(prev_output, self.recurrent_kernel)
-#         return output, [output]
-#
-# # Let's use this cell in a RNN layer:
-#
-# cell = MinimalRNNCell(32)
-# x = keras.Input((None, 5))
-# layer = keras.layers.RNN(cell)
-# y = layer(x)
-
+cell = EIRNNCell()
+x = keras.Input((None, 2))
+layer = keras.layers.RNN(cell)
+y = layer(x)
+pass
