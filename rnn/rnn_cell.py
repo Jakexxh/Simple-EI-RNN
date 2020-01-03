@@ -49,13 +49,13 @@ class EIRNNCell(keras.layers.Layer):
                                     initializer=tf.random_uniform_initializer(minval=0),
                                     name='W_out')
 
-        self._W_rec_plastic_m = None
+        self._W_rec_plastic_m = self.glorot_uniform()
         self._W_rec_plastic = self.add_weight(shape=(self.units, self.units),
                                      initializer=tf.constant_initializer(self._W_rec_plastic_m),
                                      name='W_rec_plastic')
 
         if M_rec is None:
-            self._M_rec_m =  np.ones((self.units, self.units)) - np.diag(np.ones(self.units))
+            self._M_rec_m = np.ones((self.units, self.units)) - np.diag(np.ones(self.units))
             self._M_rec = self.add_weight(shape=(self.units, self.units),
                                            initializer=tf.constant_initializer(self._M_rec_m),
                                            name='M_rec',
@@ -77,7 +77,7 @@ class EIRNNCell(keras.layers.Layer):
         dale_vec = np.ones(self.units)
         dale_vec[int(self.ei_ratio*self.units):] = -1
 
-        self.Dale_rec= self.add_weight(shape=(self.units, self.units),
+        self.Dale_rec = self.add_weight(shape=(self.units, self.units),
                                              initializer=tf.constant_initializer(np.diag(dale_vec)),
                                              name='Dale_rec',
                                              trainable=False)
@@ -112,13 +112,17 @@ class EIRNNCell(keras.layers.Layer):
     #                 * tf.random_normal(tf.shape(state), mean=0.0, stddev=1.0)
     #
     #     return new_state
+    def glorot_uniform(self, scale=1.0):
+        limits = np.sqrt(6 / (self.units + self.units))
+        uniform = np.random.uniform(-limits,limits,(self.units,self.units)) * scale
+        return np.abs(uniform)
 
+    # def gamma__distribution(self, k, size, theta=1.0):
+    #     init = np.random.gamma(k, theta, size=size)
+    #     rho0 = funs.spectral_radius(init)
+    #     init = (self.rho/rho0)*init
+    #     return tf.constant_initializer(init)
 
-    def gamma__distribution(self, k, size, theta=1.0):
-        init = np.random.gamma(k, theta, size=size)
-        rho0 = funs.spectral_radius(init)
-        init = (self.rho/rho0)*init
-        return tf.constant_initializer(init)
 
 # class MinimalRNNCell(keras.layers.Layer):
 #
