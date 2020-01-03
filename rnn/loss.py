@@ -10,10 +10,16 @@ class MaskMeanSquaredError(tf.losses.Loss):
         return K.mean(K.square(tf.multiply((y_pred - y_true), masks)))
 
 # Test
-# y = np.array([0,2,2,0])
-# pred = np.array([2,2,2,2])
-# masks = np.array([0,1,1,1])
-# # print(np.mean(np.square(y-pred)*masks))
-# lossfun = MaskMeanSquaredError()
-# error = lossfun.call(y, pred, masks)
-# print(error)
+
+
+"""
+Test
+
+y = np.array([[0,2,2,0],[0,0,0,0]] )
+pred = np.array([[2,2,2,2],[0,0,0,0]])
+masks = np.array([0,1,1,1])
+lossfun = MaskMeanSquaredError()
+error = lossfun.call(y, pred, masks)
+print(error)
+
+"""

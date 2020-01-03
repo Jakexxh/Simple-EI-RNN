@@ -45,19 +45,22 @@ class EIRNNCell(keras.layers.Layer):
 
         super(EIRNNCell, self).__init__(**kwargs)
 
-    def build(self, input_shape, M_rec=None, W_fixed=None):
+    def build(self, input_shape, M_rec=None, W_fixed=None, regu_l=0.001):
 
         self.W_in = self.add_weight(shape=(input_shape[-1], self.units),
                                       initializer=tf.random_uniform_initializer(minval=0),
+                                      regularizer=keras.regularizers.l1(regu_l),
                                       name='W_in')
 
         self.W_out = self.add_weight(shape=(self.units, 2),
                                     initializer=tf.random_uniform_initializer(minval=0),
+                                    regularizer=keras.regularizers.l1(regu_l),
                                     name='W_out')
 
         self._W_rec_plastic_m = self.glorot_uniform()
         self._W_rec_plastic = self.add_weight(shape=(self.units, self.units),
                                      initializer=tf.constant_initializer(self._W_rec_plastic_m),
+                                     regularizer=keras.regularizers.l1(regu_l),
                                      name='W_rec_plastic')
 
         if M_rec is None:
@@ -122,10 +125,13 @@ class EIRNNCell(keras.layers.Layer):
     #     return tf.constant_initializer(init)
 
 
-# Test
-#
-# cell = EIRNNCell(100, 0.8)
-# x = keras.Input((None, 2))
-# layer = keras.layers.RNN(cell)
-# y = layer(x)
-# pass
+"""
+Test
+
+cell = EIRNNCell(100, 0.8)
+x = keras.Input((None, 2))
+layer = keras.layers.RNN(cell)
+y = layer(x)
+pass
+
+"""

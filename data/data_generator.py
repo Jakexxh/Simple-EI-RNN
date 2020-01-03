@@ -148,9 +148,14 @@ class DataGenerator:
                tf.data.Dataset.from_tensor_slices(outputs_list)
 
 
-## TEST ##
-# dg = DataGenerator({'task_version':'rt', 'action': 'train'})
-# a = next(dg)
-# print(a)
-# for elem in a[2]:
-#  print(elem.numpy()) #print inputs list
+"""
+Test
+
+dg = DataGenerator({'task_version':'rt', 'action': 'train'})
+a = next(dg)
+print(a)
+for elem in a[2]:
+    print(elem.numpy()) #print inputs list
+    
+"""
+
