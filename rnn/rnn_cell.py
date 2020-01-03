@@ -102,7 +102,7 @@ class EIRNNCell(keras.layers.Layer):
                     K.random_normal(K.shape(x_prev)))
 
         r = K.relu(x)
-        z = K.dot(r, self.W_out)
+        z = K.dot(r, K.dot(self.W_out, self.Dale_out))
         return z, [x]
 
     def glorot_uniform(self, scale=1.0):
