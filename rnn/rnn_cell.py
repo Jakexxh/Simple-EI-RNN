@@ -6,16 +6,13 @@ import tensorflow.keras.backend as K
 
 from main import SGD_p
 
-UNITS_SIZE = 100
-EI_RATIO = 0.8
-
 
 class EIRNNCell(keras.layers.Layer):
 
-    def __init__(self, mode='train', **kwargs):
-        self.units = UNITS_SIZE
+    def __init__(self, units_size=100, ei_ratio=0.8, mode='train', **kwargs):
+        self.units = units_size
         self.state_size = self.units
-        self.ei_ratio = EI_RATIO
+        self.ei_ratio = ei_ratio
         self.rho = SGD_p['ini_spe_r']
 
         if mode == 'train':
@@ -24,6 +21,8 @@ class EIRNNCell(keras.layers.Layer):
             self.alpha = SGD_p['test_t_step'] / SGD_p['tau']
         else:
             raise Exception('Wrong mode')
+
+        self.init_state = None
 
         self.W_in = None
         self.W_rec = None
@@ -101,14 +100,15 @@ class EIRNNCell(keras.layers.Layer):
         x_prev = states[0]
         x = ((1 - self.alpha) * x_prev) + \
             self.alpha * (
-                K.dot(K.relu(x_prev), K.dot(self.W_rec, self.Dale_rec)) +
+                K.dot(K.relu(x_prev), K.dot(self.Dale_rec, self.W_rec)) +
                 K.dot(inputs, self.W_in) +
                 K.sqrt(K.constant(2.0 * self.alpha * SGD_p['rr_noise_std']**2)) *
                     K.random_normal(K.shape(x_prev)))
 
         r = K.relu(x)
-        z = K.dot(r, K.dot(self.W_out, self.Dale_out))
+        z = K.dot(r, K.dot(self.Dale_out, self.W_out))
         return z, [x]
+
 
     def glorot_uniform(self, scale=1.0):
         limits = np.sqrt(6 / (self.units + self.units))
@@ -124,7 +124,7 @@ class EIRNNCell(keras.layers.Layer):
 
 # Test
 #
-# cell = EIRNNCell()
+# cell = EIRNNCell(100, 0.8)
 # x = keras.Input((None, 2))
 # layer = keras.layers.RNN(cell)
 # y = layer(x)

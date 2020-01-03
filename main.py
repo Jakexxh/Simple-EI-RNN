@@ -4,6 +4,7 @@ parser = argparse.ArgumentParser()
 
 # parser.add_argument("-a", "--action", default='train', help="test/train")
 parser.add_argument("-tv", "--task_version", default='rt', help="rt/fd")
+parser.add_argument("--init_state_train", default=True, help="Set if init sate trainable")
 parser.add_argument("-e_num", "--epoch_num", default=10e3, help="num of epochs for training")
 
 
