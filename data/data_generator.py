@@ -153,4 +153,4 @@ class DataGenerator:
 # a = next(dg)
 # print(a)
 # for elem in a[2]:
-#   print(elem.numpy()) #print inputs list
+#  print(elem.numpy()) #print inputs list

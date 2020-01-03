@@ -12,13 +12,18 @@ EI_RATIO = 0.8
 
 class EIRNNCell(keras.layers.Layer):
 
-    def __init__(self, **kwargs):
+    def __init__(self, mode='train', **kwargs):
         self.units = UNITS_SIZE
         self.state_size = self.units
         self.ei_ratio = EI_RATIO
         self.rho = SGD_p['ini_spe_r']
 
-        self.alpha = SGD_p['train_t_step'] / SGD_p['tau']
+        if mode == 'train':
+            self.alpha = SGD_p['train_t_step'] / SGD_p['tau']
+        elif mode == 'test':
+            self.alpha = SGD_p['test_t_step'] / SGD_p['tau']
+        else:
+            raise Exception('Wrong mode')
 
         self.W_in = None
         self.W_rec = None
@@ -119,8 +124,8 @@ class EIRNNCell(keras.layers.Layer):
 
 # Test
 #
-cell = EIRNNCell()
-x = keras.Input((None, 2))
-layer = keras.layers.RNN(cell)
-y = layer(x)
-pass
+# cell = EIRNNCell()
+# x = keras.Input((None, 2))
+# layer = keras.layers.RNN(cell)
+# y = layer(x)
+# pass
