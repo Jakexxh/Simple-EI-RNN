@@ -19,8 +19,7 @@ CATCH_TRIAL_RATIO = 0.2
 
 class DataGenerator:
 
-    def __init__(self, rnn_p):
-        self.p = rnn_p
+    def __init__(self, task_version='rt', action='train'):
 
         self.cohs = [0.032, 0.064, 0.128, 0.256, 0.512]
         self.fix_t = 0.
@@ -29,11 +28,11 @@ class DataGenerator:
         self.trial_len = int(TRIAL_T / self.dt)
         self.batch_size = SGD_p['minibatch_size']
 
-        if self.p['task_version'] == 'rt':
-            if self.p['action'] == 'train':
+        if task_version == 'rt':
+            if action == 'train':
                 self.alpha = SGD_p['train_t_step'] / SGD_p['tau']
                 self.single_trial_fun = self.single_rt_train_trial
-                self.fix_t = self.rt_mk_fix_t()
+                self.fix_t = 100 # todo: self.rt_mk_fix_t()
                 self.step_flag = {
                     'fixation': (0, int(self.fix_t / self.dt)),
                     'stimulus': (int(self.fix_t / self.dt), self.trial_len),
@@ -43,14 +42,14 @@ class DataGenerator:
                 self.alpha = SGD_p['test_t_step'] / SGD_p['tau']
                 pass
 
-        elif self.p['task_version'] == 'fd':
-            if self.p['action'] == 'train':
+        elif task_version == 'fd':
+            if action == 'train':
                 self.single_trial_fun = self.single_rt_train_trial
             else:
                 pass
 
         else:
-            raise Exception('No task version: ' + self.p.task_version)
+            raise Exception('No task version: ' + task_version)
 
     def single_rt_train_trial(self):
         """
@@ -62,7 +61,7 @@ class DataGenerator:
 
         inputs = np.zeros((2, self.trial_len))
         outputs = np.zeros((2, self.trial_len))
-        masks = np.zeros(self.trial_len)
+        masks = np.ones(self.trial_len)
 
         for step in range(self.trial_len):
 
@@ -81,14 +80,14 @@ class DataGenerator:
                 outputs[1 - choice][step] = LOW_VALUE
                 masks[step] = 1
 
-        return {'choice': choice, 'coh': coh}, masks, inputs, outputs
+        return {'choice': choice, 'coh': coh},  masks, inputs.T, outputs
 
     def single_catch_trial(self):
         inputs = np.zeros((2, self.trial_len))
         outputs = np.ones((2, self.trial_len)) * LOW_VALUE
-        masks = np.ones((1, self.trial_len))
+        masks = np.ones(self.trial_len)
 
-        return 'catch_trial', masks, inputs, outputs
+        return 'catch_trial', masks, inputs.T, outputs
 
     def single_fd_train_trial(self):
         pass
@@ -144,18 +143,22 @@ class DataGenerator:
             inputs_list.append(row[2])
             outputs_list.append(row[3])
 
-        return decs, masks, tf.data.Dataset.from_tensor_slices(inputs_list),\
-               tf.data.Dataset.from_tensor_slices(outputs_list)
+        return decs, tf.convert_to_tensor(masks,dtype=np.float32), tf.convert_to_tensor(inputs_list,dtype=np.float32),\
+               tf.convert_to_tensor(outputs_list,dtype=np.float32)
 
 
 """
 Test
 
-dg = DataGenerator({'task_version':'rt', 'action': 'train'})
+dg = DataGenerator()
 a = next(dg)
-print(a)
-for elem in a[2]:
-    print(elem.numpy()) #print inputs list
+
+for m, inputs, outputs in zip(a[1], a[2], a[2]):
+    print(m)
+    i = inputs.numpy()
+    print(i)
+    o = outputs.numpy()
+    print(o)
     
 """
 
