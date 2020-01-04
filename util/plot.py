@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import io
 import tensorflow as tf
-import itertools
+from matplotlib.colors import BoundaryNorm
 
 def to_img(figure):
     # Save the plot to a PNG in memory.
@@ -20,15 +20,17 @@ def to_img(figure):
     return image
 
 
-def plot_confusion_matrix(cm):
+def plot_confusion_matrix(a):
     figure = plt.figure(figsize=(8, 8))
-    im = plt.imshow(cm, cmap='hot', interpolation='nearest')
+    im = plt.imshow(a,interpolation='nearest',cmap='RdBu')
     plt.colorbar(im)
-
     return to_img(figure)
+
 
 def plot_dots(x, y):
     figure = plt.figure(figsize=(8, 8))
+    plt.xlabel('% coh toward choice 1')
+    plt.ylabel('percent correct')
     plt.scatter(x, y)
 
     return to_img(figure)

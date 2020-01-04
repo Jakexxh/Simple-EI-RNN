@@ -103,7 +103,7 @@ class EIRNNCell(keras.layers.Layer):
         x_prev = states[0]
         x = ((1 - self.alpha) * x_prev) + \
             self.alpha * (
-                K.dot(K.relu(x_prev), K.dot(self.Dale_rec, self.W_rec)) +
+                K.dot(K.relu(x_prev), K.dot(self.Dale_rec, K.relu(self.W_rec))) + # TODO: not sure
                 K.dot(inputs, self.W_in) +
                 K.sqrt(K.constant(2.0 * self.alpha * SGD_p['rr_noise_std']**2)) *
                     K.random_normal(K.shape(x_prev))
@@ -113,17 +113,15 @@ class EIRNNCell(keras.layers.Layer):
         z = K.dot(r, K.dot(self.Dale_out, self.W_out))
         return z, [x]
 
-
     def glorot_uniform(self, scale=0.1):
         limits = np.sqrt(6 / (self.units + self.units))
         uniform = np.random.uniform(-limits,limits,(self.units,self.units)) * scale
         return np.abs(uniform)
 
-    # def gamma__distribution(self, k, size, theta=1.0):
-    #     init = np.random.gamma(k, theta, size=size)
-    #     rho0 = funs.spectral_radius(init)
-    #     init = (self.rho/rho0)*init
-    #     return tf.constant_initializer(init)
+    def get_config(self):
+        config = super(keras.layers.Layer, self).get_config()
+        config.update({'units': self.units})
+        return config
 
 
 """

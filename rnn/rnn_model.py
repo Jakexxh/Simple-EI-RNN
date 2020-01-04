@@ -17,6 +17,7 @@ EI_RATIO = 0.8
 X_0 = 0.1
 PERFORMANCE_LEVEL = 0.85
 
+
 class SimpleEIRNN:
 
     def __init__(self, args):
@@ -29,7 +30,6 @@ class SimpleEIRNN:
         self.init_state = None
         self.rnn_cell = None
         self.ei_rnn = None
-        # self.model = tf.keras.Sequential()
 
         self.optimizer = None
         self.loss_fun = loss.MaskMeanSquaredError
@@ -77,7 +77,7 @@ class SimpleEIRNN:
         dg = DataGenerator(task_version=self.task_version, action='train')
         validation_batch_num = self.batch_num // 10
 
-        print('Start to Train')
+        print('Start to train')
         print('#'*20)
 
         for epoch_i in range(self.epoch_num):
@@ -104,18 +104,11 @@ class SimpleEIRNN:
 
             with self.train_summary_writer.as_default():
                 tf.summary.scalar('loss', train_loss_all, step=epoch_i)
-                w_rec_m = np.dot(np.multiply(self.rnn_cell.M_rec_m, self.rnn_cell.W_rec_plastic.numpy())
-                          + self.rnn_cell.W_fixed_m, self.rnn_cell.Dale_rec.numpy())
+                w_rec_m = np.dot(self.rnn_cell.Dale_rec.numpy(), funs.rectify(np.multiply(self.rnn_cell.M_rec_m, self.rnn_cell.W_rec_plastic.numpy())
+                          + self.rnn_cell.W_fixed_m)).T
                 cm_image = plot.plot_confusion_matrix(w_rec_m)
 
                 tf.summary.image('M_rec', cm_image, step=epoch_i)
-
-                if epoch_i == 0:
-                    tf.summary.trace_on(graph=True, profiler=True)
-                    tf.summary.trace_export(
-                        name="Graph",
-                        step=0,
-                        profiler_outdir=self.log_train_dir)
 
             # Validation
             #
@@ -200,7 +193,6 @@ class SimpleEIRNN:
                 tf.summary.image('psycollection', curve_image, step=batch_index)
 
 
-
     @staticmethod
     def get_accuracy(logits, outputs, collect_region=50):
         i,j,_ = np.shape(logits)
@@ -232,9 +224,7 @@ class SimpleEIRNN:
 
 
 # TODO:
-#  Add output choice
 #  Removed all weights below a threshold, wmin, after training.
-#  Train it until its overall performance level of approximately 85%
 #  Extract reaction time
 
 
