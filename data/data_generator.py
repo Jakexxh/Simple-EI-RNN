@@ -8,7 +8,7 @@ from main import SGD_p
 import sys
 
 np.set_printoptions(precision=5)
-RT_FIX_T_MEAN = 700
+RT_FIX_T_MEAN = 200 #700
 RT_REWARD_DELAY_T = 300
 TRIAL_T = 3000  # TODO: may change
 LOW_VALUE = 0.2

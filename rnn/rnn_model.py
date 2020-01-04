@@ -10,6 +10,8 @@ from data.data_generator import DataGenerator
 from rnn import rnn_cell, loss
 from main import SGD_p
 
+np.set_printoptions(precision=5)
+
 UNITS_SIZE = 100
 EI_RATIO = 0.8
 X_0 = 0.1
@@ -27,6 +29,7 @@ class SimpleEIRNN:
         self.init_state = None
         self.rnn_cell = None
         self.ei_rnn = None
+        # self.model = tf.keras.Sequential()
 
         self.optimizer = None
         self.loss_fun = loss.MaskMeanSquaredError
@@ -35,13 +38,22 @@ class SimpleEIRNN:
         self.batch_num = args['epoch_size'] // self.batch_size
         self.epoch_num = args['epoch_num']
 
-        self.log_train_dir = "log/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '/train'
-        self.log_validation_dir = "log/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '/validation'
-        self.log_test_dir = "log/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '/test'
+        if args['model_date'] is None:
+            self.date = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        else:
+            self.date = args['model_date']
+
+        self.log_train_dir = "log/" + self.date + '/train'
+        self.log_validation_dir = "log/" + self.date + '/validation'
+        self.log_test_dir = "log/" + self.date + '/test'
+        self.checkpoint_dir = "checkpoint/" + self.date + '/'
 
         self.train_summary_writer = tf.summary.create_file_writer(self.log_train_dir)
         self.validation_summary_writer = tf.summary.create_file_writer(self.log_validation_dir)
         self.test_summary_writer = tf.summary.create_file_writer(self.log_test_dir)
+
+        self.ckpt = None
+        self.ckpt_manager = None
 
     def build(self):
         self.init_state = tf.Variable(tf.ones([SGD_p['minibatch_size'], UNITS_SIZE]) * X_0,
@@ -51,13 +63,25 @@ class SimpleEIRNN:
 
         self.optimizer = keras.optimizers.SGD(learning_rate=SGD_p['lr'])
 
-
+        self.ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=self.optimizer, net=self.ei_rnn)
+        self.ckpt_manager = tf.train.CheckpointManager(self.ckpt, self.checkpoint_dir, max_to_keep=3)
 
     def train(self):
+
+        self.ckpt.restore(self.ckpt_manager.latest_checkpoint)
+        if self.ckpt_manager.latest_checkpoint:
+            print("Restored from {}".format(self.ckpt_manager.latest_checkpoint))
+        else:
+            print("Initializing from scratch.")
+
         dg = DataGenerator(task_version=self.task_version, action='train')
         validation_batch_num = self.batch_num // 10
-        for epoch_i in range(self.epoch_num):
 
+        print('Start to Train')
+        print('#'*20)
+
+        for epoch_i in range(self.epoch_num):
+            print('Epoch ' + str(epoch_i))
             # Train
             #
             train_loss_all  = 0
@@ -86,6 +110,12 @@ class SimpleEIRNN:
 
                 tf.summary.image('M_rec', cm_image, step=epoch_i)
 
+                if epoch_i == 0:
+                    tf.summary.trace_on(graph=True, profiler=True)
+                    tf.summary.trace_export(
+                        name="Graph",
+                        step=0,
+                        profiler_outdir=self.log_train_dir)
 
             # Validation
             #
@@ -104,9 +134,9 @@ class SimpleEIRNN:
 
                 v_logits = tf.transpose(v_logits, perm=[0, 2, 1])
                 validation_loss = self.loss_fun(v_outputs, v_logits, v_masks)
-                validation_loss_all+=validation_loss.numpy()
+                validation_loss_all += validation_loss.numpy()
 
-            validation_loss_all = validation_loss_all/validation_batch_num
+            validation_loss_all = validation_loss_all / validation_batch_num
             validation_acc_all = validation_acc_all / validation_batch_num
             print('validation loss:', validation_loss_all)
             print('validation acc:', validation_acc_all)
@@ -115,14 +145,29 @@ class SimpleEIRNN:
                 tf.summary.scalar('loss', validation_loss_all, step=epoch_i)
                 tf.summary.scalar('acc', validation_acc_all, step=epoch_i)
 
-            if validation_acc_all > PERFORMANCE_LEVEL:
+            if self.task_version == 'rt' and validation_acc_all > PERFORMANCE_LEVEL:
+                print('Overall performance level is satisfied, training is terminated')
                 break
+
+            # Save Model
+            self.ckpt.step.assign_add(1)
+            self.ckpt_manager.save()
+
+            print('\n')
 
         # Test
         #
         self.test()
 
     def test(self, test_batch_num=50):
+        print('Start to test')
+        print('#'*20)
+        self.ckpt.restore(self.ckpt_manager.latest_checkpoint)
+        if self.ckpt_manager.latest_checkpoint:
+            print("Restored from {}".format(self.ckpt_manager.latest_checkpoint))
+        else:
+            print("Initializing from scratch.")
+
         dg = DataGenerator(task_version=self.task_version, action='train')  #todo: should be test for action
         psycollection = {'coh':[],'perc':[]}
 
@@ -180,14 +225,13 @@ class SimpleEIRNN:
                 data['coh'].append(-descs[index]['coh'])
             else:
                 data['coh'].append(descs[index]['coh'])
-            data['perc'].append(np.mean(logits[index][1][:-collect_region]))
+            data['perc'].append(np.mean(logits[index][1][-collect_region:]))
 
         return data
 
 
 
 # TODO:
-#  Add terminate
 #  Add output choice
 #  Removed all weights below a threshold, wmin, after training.
 #  Train it until its overall performance level of approximately 85%
