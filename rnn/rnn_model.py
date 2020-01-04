@@ -35,8 +35,8 @@ class SimpleEIRNN:
         self.batch_num = args['epoch_size'] // self.batch_size
         self.epoch_num = args['epoch_num']
 
-        self.log_train_dir = "log" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '/train'
-        self.log_test_dir = "log" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '/test'
+        self.log_train_dir = "log/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '/train'
+        self.log_test_dir = "log/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + '/test'
 
         self.train_summary_writer = tf.summary.create_file_writer(self.log_train_dir)
         self.test_summary_writer = tf.summary.create_file_writer(self.log_test_dir)

@@ -7,8 +7,8 @@ import itertools
 
 def plot_confusion_matrix(cm):
     figure = plt.figure(figsize=(8, 8))
-    plt.imshow(cm, cmap='hot', interpolation='nearest')
-
+    im = plt.imshow(cm, cmap='hot', interpolation='nearest')
+    plt.colorbar(im)
     # Save the plot to a PNG in memory.
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
