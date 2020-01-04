@@ -6,6 +6,14 @@
 
 Xiaohe Xue
 
+## Requirement
+Python 3
+ 
+Tensorflow 2.0
+
+## Run
+> python main.py
+
 ## Reaction-Time
 
 > In the RT task, the choice targets were displayed for a variable interval before 
@@ -28,25 +36,3 @@ Weights Init
 - https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.97.188104
 - https://papers.nips.cc/paper/5336-analog-memories-in-a-balanced-rate-based-network-of-e-i-neurons-supplemental.zip
 
-## Todo
-
-### General
-
--[x] Parameters
-
-### Data Generating
--[x] Train
-
--[ ] Validation
-
--[ ] Test
-
-### RNN Construction (NetWork Layer) 
--[X] Weights init
-
--[X] Add connectivity
-
--[X] call function
-
-### NetWork Model & SGD
- 

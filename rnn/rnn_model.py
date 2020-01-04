@@ -55,6 +55,7 @@ class SimpleEIRNN:
 
     def train(self):
         dg = DataGenerator(task_version=self.task_version, action='train')
+        validation_batch_num = self.batch_num // 10
         for epoch_i in range(self.epoch_num):
 
             # Train
@@ -88,31 +89,40 @@ class SimpleEIRNN:
 
             # Validation
             #
-            _, v_masks, v_inputs, v_outputs = dg.get_valid_test_datasets()
-            v_logits, _ = self.ei_rnn(v_inputs, [self.init_state])
+            validation_loss_all = 0
+            validation_acc_all = 0
 
-            acc_v_logits = v_logits.numpy()
-            acc_v_outputs = tf.transpose(v_outputs, perm=[0, 2, 1]).numpy()
-            validation_acc = self.get_accuracy(acc_v_logits, acc_v_outputs)
+            for v_batch_i in range(validation_batch_num):
 
-            v_logits = tf.transpose(v_logits, perm=[0, 2, 1])
-            validation_loss = self.loss_fun(v_outputs, v_logits, v_masks)
+                _, v_masks, v_inputs, v_outputs = dg.get_valid_test_datasets()
+                v_logits, _ = self.ei_rnn(v_inputs, [self.init_state])
 
-            print('validation loss:', validation_loss.numpy())
-            print('validation acc:', validation_acc)
+                acc_v_logits = v_logits.numpy()
+                acc_v_outputs = tf.transpose(v_outputs, perm=[0, 2, 1]).numpy()
+                validation_acc = self.get_accuracy(acc_v_logits, acc_v_outputs)
+                validation_acc_all += validation_acc
+
+                v_logits = tf.transpose(v_logits, perm=[0, 2, 1])
+                validation_loss = self.loss_fun(v_outputs, v_logits, v_masks)
+                validation_loss_all+=validation_loss.numpy()
+
+            validation_loss_all = validation_loss_all/validation_batch_num
+            validation_acc_all = validation_acc_all / validation_batch_num
+            print('validation loss:', validation_loss_all)
+            print('validation acc:', validation_acc_all)
 
             with self.validation_summary_writer.as_default():
-                tf.summary.scalar('loss', validation_loss, step=epoch_i)
-                tf.summary.scalar('acc', validation_acc, step=epoch_i)
+                tf.summary.scalar('loss', validation_loss_all, step=epoch_i)
+                tf.summary.scalar('acc', validation_acc_all, step=epoch_i)
 
-            if validation_loss > PERFORMANCE_LEVEL:
+            if validation_acc_all > PERFORMANCE_LEVEL:
                 break
 
         # Test
         #
         self.test()
 
-    def test(self, test_batch_num=100):
+    def test(self, test_batch_num=50):
         dg = DataGenerator(task_version=self.task_version, action='train')  #todo: should be test for action
         psycollection = {'coh':[],'perc':[]}
 
@@ -136,7 +146,7 @@ class SimpleEIRNN:
             psycollection['coh'] += tmp_data['coh']
             psycollection['perc'] += tmp_data['perc']
 
-            with self.validation_summary_writer.as_default():
+            with self.test_summary_writer.as_default():
                 tf.summary.scalar('loss', test_loss, step=batch_index)
                 tf.summary.scalar('acc', test_acc, step=batch_index)
 
@@ -147,9 +157,9 @@ class SimpleEIRNN:
 
 
     @staticmethod
-    def get_accuracy(logits, outputs, collect_region=20):
+    def get_accuracy(logits, outputs, collect_region=50):
         i,j,_ = np.shape(logits)
-        element_num = i*j
+        element_num = i*collect_region
         match_num = 0
 
         for i_index in range(i):
