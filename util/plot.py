@@ -4,11 +4,7 @@ import io
 import tensorflow as tf
 import itertools
 
-
-def plot_confusion_matrix(cm):
-    figure = plt.figure(figsize=(8, 8))
-    im = plt.imshow(cm, cmap='hot', interpolation='nearest')
-    plt.colorbar(im)
+def to_img(figure):
     # Save the plot to a PNG in memory.
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
@@ -23,3 +19,16 @@ def plot_confusion_matrix(cm):
 
     return image
 
+
+def plot_confusion_matrix(cm):
+    figure = plt.figure(figsize=(8, 8))
+    im = plt.imshow(cm, cmap='hot', interpolation='nearest')
+    plt.colorbar(im)
+
+    return to_img(figure)
+
+def plot_dots(x, y):
+    figure = plt.figure(figsize=(8, 8))
+    plt.scatter(x, y)
+
+    return to_img(figure)

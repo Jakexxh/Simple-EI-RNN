@@ -146,6 +146,25 @@ class DataGenerator:
         return decs, tf.convert_to_tensor(masks,dtype=np.float32), tf.convert_to_tensor(inputs_list,dtype=np.float32),\
                tf.convert_to_tensor(outputs_list,dtype=np.float32)
 
+    def get_valid_test_datasets(self):
+        trials = []
+        for num in range(self.batch_size):
+            trials.append(self.single_trial_fun())
+
+        decs = []
+        masks = []
+        inputs_list = []
+        outputs_list = []
+
+        for row in trials:
+            decs.append(row[0])
+            masks.append(row[1])
+            inputs_list.append(row[2])
+            outputs_list.append(row[3])
+
+        return decs, tf.convert_to_tensor(masks,dtype=np.float32), tf.convert_to_tensor(inputs_list,dtype=np.float32),\
+               tf.convert_to_tensor(outputs_list,dtype=np.float32)
+
 
 """
 Test

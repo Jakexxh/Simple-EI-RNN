@@ -4,8 +4,6 @@ import numpy as np
 
 
 def MaskMeanSquaredError(y_true, y_pred, masks):
-        # y_pred = tf.convert_to_tensor(y_pred,dtype=np.float32)
-        # y_true = tf.dtypes.cast(y_true, y_pred.dtype)
         loss =  K.mean(K.square(tf.multiply((y_pred - y_true), tf.expand_dims(masks, 1))))
         return loss
 
