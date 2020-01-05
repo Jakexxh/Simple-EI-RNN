@@ -77,3 +77,10 @@ interval in this fashion was essential for training on the RT task. When the ons
 - [ ] Extract reaction time
 - [ ] No Cluster in Weights Matrix
 
+
+
+## Reference
+
+- [pycog](https://github.com/frsong/pycog): Train excitatory-inhibitory recurrent neural networks for cognitive tasks.
+- [PychRNN](https://github.com/dbehrlich/PsychRNN): A package is intended to help cognitive scientist easily translate task designs from human or primate behavioral experiments into a form capable of being used as training data for a recurrent neural network.
+
