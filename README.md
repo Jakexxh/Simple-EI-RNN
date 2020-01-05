@@ -1,10 +1,15 @@
 # Perceptual decision making - Random Dots
 **Inhibitory Recurrent Neural Networks for Cognitive**
 
-
 `So far only for RT version`
 
 Xiaohe Xue
+
+
+
+## Itroduction
+
+This project trys to implementate the Perceptual Decision Making Task in the paper [**Training excitatory-inhibitory recurrent neural networks for cognitive tasks: A simple and flexible framework**](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004792)
 
 
 
