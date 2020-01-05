@@ -55,17 +55,17 @@ interval in this fashion was essential for training on the RT task. When the ons
 
 - Loss and accuracy during training
 
-<img src="/Users/xuexiaohe/Dropbox/Academy/CS/Computational Neuroscience/WangLab/Project/Simple-EI-RNN/loss_acc.png" alt="loss_acc" style="zoom:67%;" />
+<img src="./loss_acc.png" alt="loss_acc" style="zoom:67%;" />
 
 
 
 - W_rec matrix
 
-<img src="/Users/xuexiaohe/Dropbox/Academy/CS/Computational Neuroscience/WangLab/Project/Simple-EI-RNN/W_rec.png" alt="W_rec" style="zoom:50%;" />
+<img src="./W_rec.png" alt="W_rec" style="zoom:50%;" />
 
 - The plot showing the percentage of trials on which the network chose choice 1 as a function of the signed coherence, which fits the Psychometric function in the paper.
 
-<img src="/Users/xuexiaohe/Dropbox/Academy/CS/Computational Neuroscience/WangLab/Project/Simple-EI-RNN/psyfun.png" alt="psyfun" style="zoom:67%;" />
+<img src="./psyfun.png" alt="psyfun" style="zoom:67%;" />
 
 ## TODO
 
