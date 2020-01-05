@@ -1,5 +1,6 @@
 import argparse
 import rnn.rnn_model as rnn
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-a", "--action", default='train', help="test/train")
@@ -8,14 +9,13 @@ parser.add_argument("--init_state_trainable", default=True, help="Set if init sa
 parser.add_argument("-e_num", "--epoch_num", default=30, help="num of epochs for training")
 parser.add_argument("-e_size", "--epoch_size", default=1000, help="num of trails in one epoch for training")
 # parser.add_argument("--model_date", default=None)
-parser.add_argument("--model_date", default='20200105-171251')
+parser.add_argument("--model_date", default='20200105-173122')
 
 args = parser.parse_args()
 args = vars(args)
 
-
 SGD_p = {
-    'lr': 0.1, # TODO: origin is 0.01
+    'lr': 0.1,  # TODO: origin is 0.01
     'max_grad_norm': 1,
     'vanish_grad_reg': 2,
     'tau': 100,
@@ -26,9 +26,8 @@ SGD_p = {
     'baseline_input': 0.2,
     'input_noise_std': 0.01,
     'rr_noise_std': 0.15,
-    'mini_w_threshold': 10**-4
+    'mini_w_threshold': 10 ** -7  # TODO: origin is 10**-4
 }
-
 
 if __name__ == '__main__':
     ei_rnn = rnn.SimpleEIRNN(args)

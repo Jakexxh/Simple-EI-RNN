@@ -167,7 +167,7 @@ class SimpleEIRNN:
 
     def test(self, test_batch_num=50):
 
-        self.test_rnn_cell = rnn_cell.EIRNNCell(UNITS_SIZE, EI_RATIO, mode='train')
+        self.test_rnn_cell = rnn_cell.EIRNNCell(UNITS_SIZE, EI_RATIO, mode='test')
         self.test_ei_rnn = keras.layers.RNN(self.test_rnn_cell, return_sequences=True, return_state=True)
 
         print('Start to test')
@@ -280,7 +280,6 @@ class SimpleEIRNN:
 
 
 # TODO:
-#  Removed all weights below a threshold, wmin, after training.
 #  Extract reaction time
 
 
