@@ -6,13 +6,33 @@
 
 Xiaohe Xue
 
+
+
 ## Requirement
+
 Python 3
- 
+
 Tensorflow 2.0
 
-## Run
-> python main.py
+
+
+## Usage
+
+> python main.py 
+>
+> -a, --action,  test/train
+>
+> -tv, --task_version, rt/fd
+>
+> --init_state_trainable, set if init sate trainable
+>
+> -e_num, --epoch_num, num of epochs for training
+>
+> -e_size, --epoch_size, default=1000, num of trails in one epoch for training
+>
+> --model_date, None/string(%Y%m%d-%H%M%S, the path of checkpoint coreesponding to the date when it is saved)
+
+
 
 ## Reaction-Time
 
@@ -31,8 +51,24 @@ interval in this fashion was essential for training on the RT task. When the ons
 -   Response of neurons in the lateral intraparietal area during a combined visual
   discrimination reaction time task.J. D. Roitman & M. N. Shadlen, JNS 2002. http://www.jneurosci.org/content/22/21/9475.abstract
 
-Weights Init
+### Runing results
 
-- https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.97.188104
-- https://papers.nips.cc/paper/5336-analog-memories-in-a-balanced-rate-based-network-of-e-i-neurons-supplemental.zip
+- Loss and accuracy during training
+
+<img src="/Users/xuexiaohe/Dropbox/Academy/CS/Computational Neuroscience/WangLab/Project/Simple-EI-RNN/loss_acc.png" alt="loss_acc" style="zoom:67%;" />
+
+
+
+- W_rec matrix
+
+<img src="/Users/xuexiaohe/Dropbox/Academy/CS/Computational Neuroscience/WangLab/Project/Simple-EI-RNN/W_rec.png" alt="W_rec" style="zoom:50%;" />
+
+- The plot showing the percentage of trials on which the network chose choice 1 as a function of the signed coherence, which fits the Psychometric function in the paper.
+
+<img src="/Users/xuexiaohe/Dropbox/Academy/CS/Computational Neuroscience/WangLab/Project/Simple-EI-RNN/psyfun.png" alt="psyfun" style="zoom:67%;" />
+
+## TODO
+
+- [ ] Extract reaction time
+- [ ] No Cluster in Weights Matrix
 

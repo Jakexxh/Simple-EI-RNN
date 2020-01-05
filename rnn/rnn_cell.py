@@ -9,18 +9,13 @@ from main import SGD_p
 
 class EIRNNCell(keras.layers.Layer):
 
-    def __init__(self, units_size=100, ei_ratio=0.8, mode='train', **kwargs):
+    def __init__(self, units_size=100, ei_ratio=0.8, action='train', **kwargs):
         self.units = units_size
         self.state_size = self.units
         self.ei_ratio = ei_ratio
         self.rho = SGD_p['ini_spe_r']
 
-        if mode == 'train':
-            self.alpha = SGD_p['train_t_step'] / SGD_p['tau']
-        elif mode == 'test':
-            self.alpha = SGD_p['test_t_step'] / SGD_p['tau']
-        else:
-            raise Exception('Wrong mode')
+        self.alpha = None
 
         self.init_state = None
 
@@ -99,7 +94,12 @@ class EIRNNCell(keras.layers.Layer):
         self.is_initialized = True
         self.is_built = True
 
-    def call(self, inputs, states):
+    def call(self, inputs, states, training):
+        if training:
+            self.alpha = SGD_p['train_t_step'] / SGD_p['tau']
+        else:
+            self.alpha = SGD_p['test_t_step'] / SGD_p['tau']
+
         x_prev = states[0]
         x = ((1 - self.alpha) * x_prev) + \
             self.alpha * (

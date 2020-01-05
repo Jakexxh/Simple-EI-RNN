@@ -59,7 +59,7 @@ class SimpleEIRNN:
     def build(self):
         self.init_state = tf.Variable(tf.ones([SGD_p['minibatch_size'], UNITS_SIZE]) * X_0,
                                       trainable=self.init_state_trainable)
-        self.rnn_cell = rnn_cell.EIRNNCell(UNITS_SIZE, EI_RATIO, mode='train')
+        self.rnn_cell = rnn_cell.EIRNNCell(UNITS_SIZE, EI_RATIO, action='train')
         self.ei_rnn = keras.layers.RNN(self.rnn_cell, return_sequences=True, return_state=True)
 
         self.optimizer = keras.optimizers.SGD(learning_rate=SGD_p['lr'])
@@ -91,7 +91,7 @@ class SimpleEIRNN:
             for batch_i in range(self.batch_num):
                 decs, masks, inputs, outputs = next(dg)
                 with tf.GradientTape() as tape:
-                    logits, _ = self.ei_rnn(inputs, [self.init_state])
+                    logits, _ = self.ei_rnn(inputs, [self.init_state], training=True)
                     logits = tf.transpose(logits, perm=[0, 2, 1])
                     train_loss = self.loss_fun(outputs, logits, masks)
                     train_loss += sum(self.ei_rnn.losses)
@@ -157,6 +157,7 @@ class SimpleEIRNN:
             print('\n')
 
         self.reset_all_weights()
+
         print('Training is done')
         print('Remove all weights below ' + str(SGD_p['mini_w_threshold']))
         print('#' * 20)
@@ -166,10 +167,6 @@ class SimpleEIRNN:
         self.test()
 
     def test(self, test_batch_num=50):
-
-        self.test_rnn_cell = rnn_cell.EIRNNCell(UNITS_SIZE, EI_RATIO, mode='test')
-        self.test_ei_rnn = keras.layers.RNN(self.test_rnn_cell, return_sequences=True, return_state=True)
-
         print('Start to test')
         print('#' * 20)
         self.ckpt.restore(self.ckpt_manager.latest_checkpoint)
@@ -184,7 +181,7 @@ class SimpleEIRNN:
         for batch_index in range(test_batch_num):
             descs, test_masks, test_inputs, test_outputs = dg.get_valid_test_datasets()
 
-            test_logits, _ = self.test_ei_rnn(test_inputs, [self.init_state])
+            test_logits, _ = self.ei_rnn(test_inputs, [self.init_state], training=False)
 
             acc_test_logits = test_logits.numpy()
             acc_test_outputs = tf.transpose(test_outputs, perm=[0, 2, 1]).numpy()
@@ -218,7 +215,6 @@ class SimpleEIRNN:
                 tf.summary.image('M_out', wout_image, step=batch_index)
 
 
-
     def get_w_rec_m(self):
         return np.dot(self.rnn_cell.Dale_rec.numpy(),
                       funs.rectify(np.multiply(self.rnn_cell.M_rec_m, self.rnn_cell.W_rec_plastic.numpy())
@@ -234,18 +230,6 @@ class SimpleEIRNN:
             new_w.append(w)
 
         self.rnn_cell.set_weights(new_w)
-
-        # w_in_value = self.rnn_cell.W_in.numpy()
-        # w_in_value[w_in_value < SGD_p['mini_w_threshold']] = 0.
-        # self.rnn_cell.W_in.set_weights(w_in_value)
-        #
-        # w_rec_value = self.rnn_cell.W_rec_plastic.numpy()
-        # w_rec_value[w_rec_value < SGD_p['mini_w_threshold']] = 0.
-        # self.rnn_cell.W_rec_plastic.set_weights(w_rec_value)
-        #
-        # w_out_value = self.rnn_cell.W_out.numpy()
-        # w_out_value[w_out_value < SGD_p['mini_w_threshold']] = 0.
-        # self.rnn_cell.W_in.set_weights(w_out_value)
 
 
 
@@ -281,6 +265,7 @@ class SimpleEIRNN:
 
 # TODO:
 #  Extract reaction time
+#  No Cluster in Weights Matrix
 
 
 """
