@@ -18,8 +18,8 @@ Tensorflow 2.0
 
 ## Usage
 
-> python main.py 
->
+`python main.py` 
+
 > -a, --action,  test/train
 >
 > -tv, --task_version, rt/fd
