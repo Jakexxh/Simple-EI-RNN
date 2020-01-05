@@ -12,7 +12,8 @@ RT_FIX_T_MEAN = 200 #700
 RT_REWARD_DELAY_T = 300
 TRIAL_T = 3000  # TODO: may change
 LOW_VALUE = 0.2
-HIGH_VALUE = 1.0
+HIGH_VALUE = 1.2
+REACTION_THRESHOLD = 1.0
 CHOICE_MAP = [0, 1]
 CATCH_TRIAL_RATIO = 0.2
 
@@ -24,14 +25,16 @@ class DataGenerator:
         self.cohs = [0.032, 0.064, 0.128, 0.256, 0.512]
         self.fix_t = 0.
         self.ct_portion = 0.1  # self.p.ct_portion
-        self.dt = SGD_p['train_t_step']
-        self.trial_len = int(TRIAL_T / self.dt)
         self.batch_size = SGD_p['minibatch_size']
 
         if task_version == 'rt':
+
+            self.single_trial_fun = self.single_rt_train_trial
+
             if action == 'train':
+                self.dt = SGD_p['train_t_step']
+                self.trial_len = int(TRIAL_T / self.dt)
                 self.alpha = SGD_p['train_t_step'] / SGD_p['tau']
-                self.single_trial_fun = self.single_rt_train_trial
                 self.fix_t = 100 # todo: self.rt_mk_fix_t()
                 self.step_flag = {
                     'fixation': (0, int(self.fix_t / self.dt)),
@@ -39,8 +42,15 @@ class DataGenerator:
                     'decision': (int((self.fix_t + RT_REWARD_DELAY_T) / self.dt), self.trial_len)}
 
             else:
+                self.dt = SGD_p['test_t_step']
+                self.trial_len = int(TRIAL_T / self.dt)
                 self.alpha = SGD_p['test_t_step'] / SGD_p['tau']
-                pass
+                self.fix_t = 100  # todo: self.rt_mk_fix_t()
+                self.step_flag = {
+                    'fixation': (0, int(self.fix_t / self.dt)),
+                    'stimulus': (int(self.fix_t / self.dt), self.trial_len),
+                    'decision': (int((self.fix_t + RT_REWARD_DELAY_T) / self.dt), self.trial_len)}
+
 
         elif task_version == 'fd':
             if action == 'train':
