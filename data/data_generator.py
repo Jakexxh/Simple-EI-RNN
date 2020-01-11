@@ -3,22 +3,7 @@ import scipy.stats as stats
 import util.util_funs as funs
 import random
 import numpy as np
-# from main import SGD_p
-SGD_p = {
-    'lr': 0.1,  # TODO: origin is 0.01
-    'max_grad_norm': 1,
-    'vanish_grad_reg': 2,
-    'tau': 100,
-    'train_t_step': 20,
-    'test_t_step': 0.5,
-    'ini_spe_r': 1.5,
-    'minibatch_size': 20,
-    'baseline_input': 0.2,
-    'input_noise_std': 0.01,
-    'rr_noise_std': 0.15,
-    'mini_w_threshold': 10 ** -6  # TODO: origin is 10**-4
-}
-import sys
+from main import SGD_p
 
 np.set_printoptions(precision=5)
 RT_FIX_T_MEAN = 200 #700
@@ -95,9 +80,7 @@ class DataGenerator:
 
         inputs = np.zeros((2, self.trial_len))
         outputs = np.zeros((2, self.trial_len))
-        masks = np.ones(self.trial_len)
-
-        self.truncated_norm = self.get_truncated_norm()
+        masks = np.zeros(self.trial_len)
 
         for step in range(self.trial_len):
 
@@ -130,7 +113,7 @@ class DataGenerator:
 
         inputs = np.zeros((2, self.trial_len))
         outputs = np.zeros((2, self.trial_len))
-        masks = np.ones(self.trial_len)
+        masks = np.zeros(self.trial_len)
 
         for step in range(self.trial_len):
 
@@ -243,12 +226,3 @@ for m, inputs, outputs in zip(a[1], a[2], a[2]):
     
 """
 
-dg = DataGenerator(task_version='fd')
-a = next(dg)
-
-for m, inputs, outputs in zip(a[1], a[2], a[2]):
-    print(m)
-    i = inputs.numpy()
-    print(i)
-    o = outputs.numpy()
-    print(o)

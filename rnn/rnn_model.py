@@ -44,9 +44,9 @@ class SimpleEIRNN:
         else:
             self.date = args['model_date']
 
-        self.log_train_dir = "log/" + self.date + '/train'
-        self.log_validation_dir = "log/" + self.date + '/validation'
-        self.log_test_dir = "log/" + self.date + '/test'
+        self.log_train_dir = "log/" + self.date + '/train_'+self.task_version
+        self.log_validation_dir = "log/" + self.date + '/validation_'+self.task_version
+        self.log_test_dir = "log/" + self.date + '/test_'+self.task_version
         self.checkpoint_dir = "checkpoint/" + self.date + '/'
 
         self.train_summary_writer = tf.summary.create_file_writer(self.log_train_dir)
