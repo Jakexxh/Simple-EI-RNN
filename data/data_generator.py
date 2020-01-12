@@ -156,7 +156,11 @@ class DataGenerator:
         return {'choice': choice, 'coh': coh}, masks, inputs.T, outputs
 
     def single_catch_trial(self):
-        inputs = np.zeros((2, self.trial_len))
+        inputs = np.ones((2, self.trial_len))
+        for step in range(self.trial_len):
+            inputs[0][step] = funs.rectify(SGD_p['baseline_input'] + self.input_noise())
+            inputs[1][step] = funs.rectify(SGD_p['baseline_input'] + self.input_noise())
+
         outputs = np.ones((2, self.trial_len)) * LOW_VALUE
         masks = np.ones(self.trial_len)
 

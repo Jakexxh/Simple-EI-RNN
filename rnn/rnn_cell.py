@@ -75,7 +75,7 @@ class EIRNNCell(keras.layers.Layer):
         self.rec_scale = self.rho * funs.spectral_radius(np.multiply(self.M_rec_m, self.W_rec_plastic_m)
                                                          + self.W_fixed_m)
 
-        self.W_rec = self.rec_scale * (tf.multiply(self._M_rec, self.W_rec_plastic) + self._W_fixed)
+        self.W_rec = self.rec_scale * (tf.multiply(self._M_rec, K.relu(self.W_rec_plastic)) + self._W_fixed)
 
         # Dale
         dale_vec = np.ones(self.units)
@@ -103,17 +103,17 @@ class EIRNNCell(keras.layers.Layer):
         x_prev = states[0]
         x = ((1 - self.alpha) * x_prev) + \
             self.alpha * (
-                K.dot(K.relu(x_prev), K.dot(self.Dale_rec, K.relu(self.W_rec))) + # TODO: not sure
-                K.dot(inputs, self.W_in) +
+                K.dot(K.relu(x_prev), K.dot(self.Dale_rec, self.W_rec)) + # TODO: use abs!!
+                K.dot(inputs, K.relu(self.W_in)) +
                 K.sqrt(K.constant(2.0 * self.alpha * SGD_p['rr_noise_std']**2)) *
                     K.random_normal(K.shape(x_prev))
             )
 
         r = K.relu(x)
-        z = K.dot(r, K.dot(self.Dale_out, self.W_out))
+        z = K.dot(r, K.dot(self.Dale_out,  K.relu(self.W_out)))
         return z, [x]
 
-    def glorot_uniform(self, scale=0.1): # Todo: changed
+    def glorot_uniform(self, scale=0.01): # Todo: changed
         limits = np.sqrt(6 / (self.units + self.units))
         uniform = np.random.uniform(-limits,limits,(self.units,self.units)) * scale
         return np.abs(uniform)

@@ -101,6 +101,10 @@ class SimpleEIRNN:
                 grads, _ = tf.clip_by_global_norm(grads, self.grad_clip)
                 self.optimizer.apply_gradients(zip(grads, self.ei_rnn.trainable_weights))
 
+                with self.train_summary_writer.as_default(): #TODO added to debug
+                    cm_image = plot.plot_confusion_matrix(self.get_w_rec_m())
+                    tf.summary.image('M_rec', cm_image, step=epoch_i)
+
             train_loss_all = train_loss_all / self.batch_num
             print('train loss:', train_loss_all)
 
@@ -123,6 +127,7 @@ class SimpleEIRNN:
 
                 v_logits = tf.transpose(v_logits, perm=[0, 2, 1])
                 validation_loss = self.loss_fun(v_outputs, v_logits, v_masks)
+                validation_loss += sum(self.ei_rnn.losses)
                 validation_loss_all += validation_loss.numpy()
 
             validation_loss_all = validation_loss_all / validation_batch_num
@@ -139,7 +144,7 @@ class SimpleEIRNN:
                 cm_image = plot.plot_confusion_matrix(self.get_w_rec_m())
                 tf.summary.image('M_rec', cm_image, step=epoch_i)
 
-                win_image = plot.plot_confusion_matrix(self.rnn_cell.W_in.numpy()[:, :int(UNITS_SIZE*EI_RATIO)], False)
+                win_image = plot.plot_confusion_matrix(funs.rectify(self.rnn_cell.W_in.numpy()[:, :int(UNITS_SIZE*EI_RATIO)]), False)
                 tf.summary.image('M_in', win_image, step=epoch_i)
 
                 wout_image = plot.plot_confusion_matrix(self.get_w_out_m()[:,:int(UNITS_SIZE*EI_RATIO)], False)
@@ -154,9 +159,9 @@ class SimpleEIRNN:
             self.ckpt.step.assign_add(1)
             self.ckpt_manager.save()
 
-            self.reset_all_weights() # todo: may change
-            print('Remove all weights below ' + str(SGD_p['mini_w_threshold']))
-            print('\n')
+            # self.reset_all_weights() # todo: may change
+            # print('Remove all weights below ' + str(SGD_p['mini_w_threshold']))
+            # print('\n')
 
         print('Training is done')
         print('Remove all weights below ' + str(SGD_p['mini_w_threshold']))
@@ -189,6 +194,7 @@ class SimpleEIRNN:
 
             test_logits = tf.transpose(test_logits, perm=[0, 2, 1])
             test_loss = self.loss_fun(test_outputs, test_logits, test_masks)
+            test_loss += sum(self.ei_rnn.losses)
 
             print('test loss:', test_loss.numpy())
             print('test acc:', test_acc)
@@ -208,20 +214,19 @@ class SimpleEIRNN:
                 cm_image = plot.plot_confusion_matrix(self.get_w_rec_m())
                 tf.summary.image('M_rec', cm_image, step=batch_index)
 
-                win_image = plot.plot_confusion_matrix(self.rnn_cell.W_in.numpy()[:, :int(UNITS_SIZE*EI_RATIO)], False)
+                win_image = plot.plot_confusion_matrix(funs.rectify(self.rnn_cell.W_in.numpy()[:, :int(UNITS_SIZE*EI_RATIO)]), False)
                 tf.summary.image('M_in', win_image, step=batch_index)
 
                 wout_image = plot.plot_confusion_matrix(self.get_w_out_m()[:,:int(UNITS_SIZE*EI_RATIO)], False)
                 tf.summary.image('M_out', wout_image, step=batch_index)
 
-
     def get_w_rec_m(self):
         return np.dot(self.rnn_cell.Dale_rec.numpy(),
-                      funs.rectify(np.multiply(self.rnn_cell.M_rec_m, self.rnn_cell.W_rec_plastic.numpy())
-                                   + self.rnn_cell.W_fixed_m)).T
+                      np.multiply(self.rnn_cell.M_rec_m, funs.rectify(self.rnn_cell.W_rec_plastic.numpy()))
+                                   + self.rnn_cell.W_fixed_m).T
 
     def get_w_out_m(self):
-        return np.dot(self.rnn_cell.Dale_out.numpy(), self.rnn_cell.W_out.numpy()).T
+        return np.dot(self.rnn_cell.Dale_out.numpy(), funs.rectify(self.rnn_cell.W_out.numpy())).T
 
     def reset_all_weights(self):
         new_w = []
