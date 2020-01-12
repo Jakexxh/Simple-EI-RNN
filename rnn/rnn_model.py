@@ -16,7 +16,7 @@ UNITS_SIZE = 100
 EI_RATIO = 0.8
 X_0 = 0.1
 PERFORMANCE_LEVEL = 0.85
-PERFORMANCE_CHECK_REGION = 5
+PERFORMANCE_CHECK_REGION = 3
 
 
 class SimpleEIRNN:
@@ -44,9 +44,9 @@ class SimpleEIRNN:
         else:
             self.date = args['model_date']
 
-        self.log_train_dir = "log/" + self.date + '/train_'+self.task_version
-        self.log_validation_dir = "log/" + self.date + '/validation_'+self.task_version
-        self.log_test_dir = "log/" + self.date + '/test_'+self.task_version
+        self.log_train_dir = "log/" + self.date + '_' + self.task_version + '/train'
+        self.log_validation_dir = "log/" + self.date + '_' + self.task_version + '/validation'
+        self.log_test_dir = "log/" + self.date + '_' + self.task_version + '/test'
         self.checkpoint_dir = "checkpoint/" + self.date + '/'
 
         self.train_summary_writer = tf.summary.create_file_writer(self.log_train_dir)
@@ -145,7 +145,7 @@ class SimpleEIRNN:
                 wout_image = plot.plot_confusion_matrix(self.get_w_out_m()[:,:int(UNITS_SIZE*EI_RATIO)], False)
                 tf.summary.image('M_out', wout_image, step=epoch_i)
 
-            if self.task_version == 'rt' and \
+            if epoch_i > PERFORMANCE_CHECK_REGION and \
                     np.mean(over_all_performace[-PERFORMANCE_CHECK_REGION:]) > PERFORMANCE_LEVEL:
                 print('Overall performance level is satisfied, training is terminated\n')
                 break
@@ -154,9 +154,9 @@ class SimpleEIRNN:
             self.ckpt.step.assign_add(1)
             self.ckpt_manager.save()
 
+            self.reset_all_weights() # todo: may change
+            print('Remove all weights below ' + str(SGD_p['mini_w_threshold']))
             print('\n')
-
-        self.reset_all_weights()
 
         print('Training is done')
         print('Remove all weights below ' + str(SGD_p['mini_w_threshold']))
@@ -231,10 +231,8 @@ class SimpleEIRNN:
 
         self.rnn_cell.set_weights(new_w)
 
-
-
     @staticmethod
-    def get_accuracy(logits, outputs, collect_region=50):
+    def get_accuracy(logits, outputs, collect_region=10): # todo: region may change for fd version
         i, j, _ = np.shape(logits)
         element_num = i * collect_region
         match_num = 0

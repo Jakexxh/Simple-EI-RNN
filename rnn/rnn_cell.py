@@ -40,22 +40,22 @@ class EIRNNCell(keras.layers.Layer):
 
         super(EIRNNCell, self).__init__(**kwargs)
 
-    def build(self, input_shape, M_rec=None, W_fixed=None, regu_l=0.001):
+    def build(self, input_shape, M_rec=None, W_fixed=None, regu_l=0.01):
 
         self.W_in = self.add_weight(shape=(input_shape[-1], self.units),
                                       initializer=tf.random_uniform_initializer(minval=0),
-                                      regularizer=keras.regularizers.l1(regu_l),
+                                      regularizer=keras.regularizers.l1_l2(regu_l),
                                       name='W_in')
 
         self.W_out = self.add_weight(shape=(self.units, 2),
                                     initializer=tf.random_uniform_initializer(minval=0),
-                                    regularizer=keras.regularizers.l1(regu_l),
+                                    regularizer=keras.regularizers.l1_l2(regu_l),
                                     name='W_out')
 
         self.W_rec_plastic_m = self.glorot_uniform()
         self.W_rec_plastic = self.add_weight(shape=(self.units, self.units),
                                      initializer=tf.constant_initializer(self.W_rec_plastic_m),
-                                     regularizer=keras.regularizers.l1(regu_l),
+                                     regularizer=keras.regularizers.l1_l2(regu_l),
                                      name='W_rec_plastic')
 
         if M_rec is None:
@@ -113,7 +113,7 @@ class EIRNNCell(keras.layers.Layer):
         z = K.dot(r, K.dot(self.Dale_out, self.W_out))
         return z, [x]
 
-    def glorot_uniform(self, scale=0.1):
+    def glorot_uniform(self, scale=0.1): # Todo: changed
         limits = np.sqrt(6 / (self.units + self.units))
         uniform = np.random.uniform(-limits,limits,(self.units,self.units)) * scale
         return np.abs(uniform)
