@@ -15,7 +15,7 @@ args = parser.parse_args()
 args = vars(args)
 
 SGD_p = {
-    'lr': 1.,  # TODO: origin is 0.01
+    'lr': 0.1,  # TODO: origin is 0.01
     'max_grad_norm': 1,
     'vanish_grad_reg': 2,
     'tau': 100,
