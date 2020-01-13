@@ -20,10 +20,12 @@ def plot_confusion_matrix(a, dist=True):
     if dist:
         figure = plt.figure(figsize=(8, 8))
         im = plt.imshow(a, interpolation='nearest', cmap='RdBu')
-        plt.colorbar(im)
+
     else:
         figure = plt.figure(figsize=(12, 6))
-        plt.imshow(a, interpolation='nearest', cmap='Blues')
+        im = plt.imshow(a, interpolation='nearest', cmap='Blues')
+
+    plt.colorbar(im)
 
     return to_img(figure)
 

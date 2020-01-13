@@ -43,12 +43,12 @@ class EIRNNCell(keras.layers.Layer):
     def build(self, input_shape, M_rec=None, W_fixed=None, regu_l=0.01):
 
         self.W_in = self.add_weight(shape=(input_shape[-1], self.units),
-                                      initializer=tf.random_uniform_initializer(minval=0),
+                                      initializer=tf.random_uniform_initializer(minval=0, maxval=0.5),
                                       regularizer=keras.regularizers.l1_l2(regu_l),
                                       name='W_in')
 
         self.W_out = self.add_weight(shape=(self.units, 2),
-                                    initializer=tf.random_uniform_initializer(minval=0),
+                                    initializer=tf.random_uniform_initializer(minval=0, maxval=0.5),
                                     regularizer=keras.regularizers.l1_l2(regu_l),
                                     name='W_out')
 

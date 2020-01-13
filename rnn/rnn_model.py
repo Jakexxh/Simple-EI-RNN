@@ -85,6 +85,7 @@ class SimpleEIRNN:
 
         for epoch_i in range(self.epoch_num):
             print('Epoch ' + str(epoch_i))
+
             # Train
             #
             train_loss_all = 0
@@ -117,12 +118,12 @@ class SimpleEIRNN:
             validation_acc_all = 0
 
             for v_batch_i in range(validation_batch_num):
-                _, v_masks, v_inputs, v_outputs = dg.get_valid_test_datasets()
+                _, v_masks, v_inputs, v_outputs = next(dg)#dg.get_valid_test_datasets()
                 v_logits, _ = self.ei_rnn(v_inputs, [self.init_state])
 
                 acc_v_logits = v_logits.numpy()
                 acc_v_outputs = tf.transpose(v_outputs, perm=[0, 2, 1]).numpy()
-                validation_acc = self.get_accuracy(acc_v_logits, acc_v_outputs)
+                validation_acc = self.get_accuracy(acc_v_logits, acc_v_outputs, v_masks)
                 validation_acc_all += validation_acc
 
                 v_logits = tf.transpose(v_logits, perm=[0, 2, 1])
@@ -190,7 +191,7 @@ class SimpleEIRNN:
 
             acc_test_logits = test_logits.numpy()
             acc_test_outputs = tf.transpose(test_outputs, perm=[0, 2, 1]).numpy()
-            test_acc = self.get_accuracy(acc_test_logits, acc_test_outputs)
+            test_acc = self.get_accuracy(acc_test_logits, acc_test_outputs, test_masks)
 
             test_logits = tf.transpose(test_logits, perm=[0, 2, 1])
             test_loss = self.loss_fun(test_outputs, test_logits, test_masks)
@@ -237,19 +238,16 @@ class SimpleEIRNN:
         self.rnn_cell.set_weights(new_w)
 
     @staticmethod
-    def get_accuracy(logits, outputs, collect_region=10): # todo: region may change for fd version
-        i, j, _ = np.shape(logits)
-        element_num = i * collect_region
-        match_num = 0
-
-        for i_index in range(i):
-            for j_index in range(j - collect_region, j):
-                logits_large_index = np.argmax(logits[i_index][j_index])
-                outputs_large_index = np.argmax(outputs[i_index][j_index])
-                if logits_large_index == outputs_large_index:
-                    match_num += 1
-
-        return match_num / element_num
+    def get_accuracy(logits, outputs,masks): # todo: region may change for fd version
+        batch_num, _ =np.shape(masks)
+        means = 0.
+        for index in range(batch_num):
+            x = np.argmax(logits[index], axis=1)
+            y = np.argmax(outputs[index], axis=1)
+            delet_i, = np.where(masks[index] == 0)
+            match = np.delete(np.equal(x,y),delet_i)
+            means += np.mean(match)
+        return means / batch_num
 
     @staticmethod
     def get_psychometric_data(descs, logits, collect_region=20):
@@ -279,3 +277,5 @@ ei_rnn.build()
 ei_rnn.train()
 
 """
+
+

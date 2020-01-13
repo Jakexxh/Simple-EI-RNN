@@ -5,20 +5,7 @@ import random
 import numpy as np
 from main import SGD_p
 
-# SGD_p = {
-#     'lr': 0.1,  # TODO: origin is 0.01
-#     'max_grad_norm': 1,
-#     'vanish_grad_reg': 2,
-#     'tau': 100,
-#     'train_t_step': 20,
-#     'test_t_step': 0.5,
-#     'ini_spe_r': 1.5,
-#     'minibatch_size': 20,
-#     'baseline_input': 0.2,
-#     'input_noise_std': 0.01,
-#     'rr_noise_std': 0.15,
-#     'mini_w_threshold': 10 ** -6  # TODO: origin is 10**-4
-# }
+
 
 np.set_printoptions(precision=5)
 RT_FIX_T_MEAN = 200 #700
@@ -261,6 +248,20 @@ for m, inputs, outputs in zip(a[1], a[2], a[2]):
     print(o)
     
 """
+# SGD_p = {
+#     'lr': 0.1,  # TODO: origin is 0.01
+#     'max_grad_norm': 1,
+#     'vanish_grad_reg': 2,
+#     'tau': 100,
+#     'train_t_step': 20,
+#     'test_t_step': 0.5,
+#     'ini_spe_r': 1.5,
+#     'minibatch_size': 20,
+#     'baseline_input': 0.2,
+#     'input_noise_std': 0.01,
+#     'rr_noise_std': 0.15,
+#     'mini_w_threshold': 10 ** -6  # TODO: origin is 10**-4
+# }
 
 # dg = DataGenerator(task_version='fd')
 # a = next(dg)
