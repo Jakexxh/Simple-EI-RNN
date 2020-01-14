@@ -75,7 +75,6 @@ interval in this fashion was essential for training on the RT task. When the ons
 ## TODO
 
 - [ ] Extract reaction time
-- [ ] No Cluster in Weights Matrix
 
 
 
