@@ -40,7 +40,7 @@ class EIRNNCell(keras.layers.Layer):
 
         super(EIRNNCell, self).__init__(**kwargs)
 
-    def build(self, input_shape, M_rec=None, W_fixed=None, regu_l=0.01):
+    def build(self, input_shape, M_rec=None, W_fixed=None, regu_l=0.01): #TODO: may change
 
         self.W_in = self.add_weight(shape=(input_shape[-1], self.units),
                                       initializer=tf.random_uniform_initializer(minval=0, maxval=0.5),
@@ -79,15 +79,20 @@ class EIRNNCell(keras.layers.Layer):
 
         # Dale
         dale_vec = np.ones(self.units)
-        dale_vec[int(self.ei_ratio*self.units):] = -1
+        dale_vec[int(self.ei_ratio * self.units):] = -1 * self.ei_ratio / (1 - self.ei_ratio)
+
+        rec_dale = np.diag(dale_vec) / np.linalg.norm(
+            np.matmul(np.ones((self.units, self.units)), np.diag(dale_vec)), axis=1)[:, np.newaxis] #TODO: may change
 
         self.Dale_rec = self.add_weight(shape=(self.units, self.units),
-                                             initializer=tf.constant_initializer(np.diag(dale_vec)),
+                                             initializer=tf.constant_initializer(rec_dale),
                                              name='Dale_rec',
                                              trainable=False)
 
+        dale_vec[int(self.ei_ratio * self.units):] = 0
+        out_dale = np.diag(dale_vec)
         self.Dale_out = self.add_weight(shape=(self.units, self.units),
-                                        initializer=tf.constant_initializer(np.diag(dale_vec)),
+                                        initializer=tf.constant_initializer(out_dale),
                                         name='Dale_out',
                                         trainable=False)
 
@@ -101,19 +106,26 @@ class EIRNNCell(keras.layers.Layer):
             self.alpha = SGD_p['test_t_step'] / SGD_p['tau']
 
         x_prev = states[0]
+
+        t = K.mean(K.sqrt(K.constant(2.0 * self.alpha * SGD_p['rr_noise_std'] ** 2)) * K.random_normal(K.shape(x_prev)))
+        p = K.mean(K.dot(K.relu(x_prev), K.dot(self.Dale_rec, self.W_rec)))
+        q= K.mean(K.dot(inputs, K.relu(self.W_in)))
         x = ((1 - self.alpha) * x_prev) + \
             self.alpha * (
-                K.dot(K.relu(x_prev), K.dot(self.Dale_rec, self.W_rec)) + # TODO: use abs!!
+                K.dot(K.relu(x_prev), K.dot(self.Dale_rec, self.W_rec)) +
                 K.dot(inputs, K.relu(self.W_in)) +
                 K.sqrt(K.constant(2.0 * self.alpha * SGD_p['rr_noise_std']**2)) *
                     K.random_normal(K.shape(x_prev))
             )
 
         r = K.relu(x)
-        z = K.dot(r, K.dot(self.Dale_out,  K.relu(self.W_out)))
+        z = K.dot(r, K.dot(self.Dale_out, K.relu(self.W_out)))
+
+        rz = K.mean(r)
+        zz = K.mean(z)
         return z, [x]
 
-    def glorot_uniform(self, scale=0.01): # Todo: changed
+    def glorot_uniform(self, scale=0.01): # Todo: try and debug its best scale!!!!!!!!
         limits = np.sqrt(6 / (self.units + self.units))
         uniform = np.random.uniform(-limits,limits,(self.units,self.units)) * scale
         return np.abs(uniform)

@@ -5,14 +5,10 @@ import random
 import numpy as np
 from main import SGD_p
 
-
-
 np.set_printoptions(precision=5)
 RT_FIX_T_MEAN = 200 #700
 RT_REWARD_DELAY_T = 300
 TRIAL_T = 2000  # TODO: may change
-LOW_VALUE = 0.2
-HIGH_VALUE = 1.2
 REACTION_THRESHOLD = 1.0
 CHOICE_MAP = [0, 1]
 CATCH_TRIAL_RATIO = 0.2
@@ -28,7 +24,8 @@ class DataGenerator:
         self.batch_size = SGD_p['minibatch_size']
 
         if task_version == 'rt':
-
+            self.low_value = 0.2
+            self.high_value = 1.2
             self.single_trial_fun = self.single_rt_train_trial
 
             if action == 'train':
@@ -52,21 +49,22 @@ class DataGenerator:
                     'decision': ((self.fix_t + RT_REWARD_DELAY_T) // self.dt, self.trial_len)}
 
         elif task_version == 'fd':
-
+            self.low_value = 0.2
+            self.high_value = 1.0
             self.single_trial_fun = self.single_fd_train_trial
 
             if action == 'train':
                 self.dt = SGD_p['train_t_step']
-                self.trial_len = int(2000 // self.dt)
+                self.trial_len = int(TRIAL_T // self.dt)
                 self.alpha = SGD_p['train_t_step'] / SGD_p['tau']
                 self.fix_t = 100  # todo: may change
                 self.step_flag = {
                     'fixation': (0, self.fix_t // self.dt)}
             else:
                 self.dt = SGD_p['test_t_step']
-                self.trial_len = int(2000 // self.dt)
+                self.trial_len = int(TRIAL_T // self.dt)
                 self.alpha = SGD_p['test_t_step'] / SGD_p['tau']
-                self.fix_t = 500  # todo: may change
+                self.fix_t = 300  # todo: may change
                 self.step_flag = {
                     'fixation': (0, self.fix_t // self.dt)}
 
@@ -87,7 +85,7 @@ class DataGenerator:
             if step < self.step_flag['fixation'][1]:
                 inputs[choice][step] = funs.rectify(SGD_p['baseline_input'] + self.input_noise())
                 inputs[1 - choice][step] = funs.rectify(SGD_p['baseline_input'] + self.input_noise())
-                outputs[:, step] = LOW_VALUE
+                outputs[:, step] = self.low_value
                 masks[step] = 1
 
             if step >= self.step_flag['stimulus'][0]:
@@ -97,15 +95,15 @@ class DataGenerator:
                                                         self.stim_value(-coh) + self.input_noise())
 
             if step >= self.step_flag['decision'][0]:
-                outputs[choice][step] = HIGH_VALUE
-                outputs[1 - choice][step] = LOW_VALUE
+                outputs[choice][step] = self.high_value
+                outputs[1 - choice][step] = self.low_value
                 masks[step] = 1
 
         return {'choice': choice, 'coh': coh},  masks, inputs.T, outputs
 
     def single_fd_train_trial(self):
 
-        stim_t = 500 // self.dt#self.get_truncated_expnorm(330, 80, 1500) // self.dt
+        stim_t = self.get_truncated_expnorm(600, 200, 1500) // self.dt #500 // self.dt#
 
         self.step_flag['stimulus'] = (self.step_flag['fixation'][1], self.step_flag['fixation'][1] + stim_t)
         self.step_flag['decision'] = (self.step_flag['fixation'][1] + stim_t, self.trial_len)
@@ -123,7 +121,7 @@ class DataGenerator:
                 inputs[choice][step] = funs.rectify(SGD_p['baseline_input'] + self.input_noise())
                 inputs[1 - choice][step] = funs.rectify(SGD_p['baseline_input'] + self.input_noise())
 
-                outputs[:, step] = LOW_VALUE
+                outputs[:, step] = self.low_value
                 masks[step] = 1
 
             if self.step_flag['stimulus'][0] <= step < self.step_flag['stimulus'][1]:
@@ -136,8 +134,8 @@ class DataGenerator:
                 inputs[choice][step] = funs.rectify(SGD_p['baseline_input'] + self.input_noise())
                 inputs[1 - choice][step] = funs.rectify(SGD_p['baseline_input'] + self.input_noise())
 
-                outputs[choice][step] = HIGH_VALUE
-                outputs[1 - choice][step] = LOW_VALUE
+                outputs[choice][step] = self.high_value
+                outputs[1 - choice][step] = self.low_value
                 masks[step] = 1
 
         return {'choice': choice, 'coh': coh}, masks, inputs.T, outputs
@@ -148,7 +146,7 @@ class DataGenerator:
             inputs[0][step] = funs.rectify(SGD_p['baseline_input'] + self.input_noise())
             inputs[1][step] = funs.rectify(SGD_p['baseline_input'] + self.input_noise())
 
-        outputs = np.ones((2, self.trial_len)) * LOW_VALUE
+        outputs = np.ones((2, self.trial_len)) * self.low_value
         masks = np.ones(self.trial_len)
 
         return 'catch_trial', masks, inputs.T, outputs

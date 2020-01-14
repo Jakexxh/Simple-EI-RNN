@@ -62,7 +62,7 @@ class SimpleEIRNN:
         self.rnn_cell = rnn_cell.EIRNNCell(UNITS_SIZE, EI_RATIO, action='train')
         self.ei_rnn = keras.layers.RNN(self.rnn_cell, return_sequences=True, return_state=True)
 
-        self.optimizer = keras.optimizers.SGD(learning_rate=SGD_p['lr'])
+        self.optimizer =  keras.optimizers.SGD(learning_rate=SGD_p['lr']) #keras.optimizers.Adam(learning_rate=SGD_p['lr'])
 
         self.ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=self.optimizer, net=self.ei_rnn)
         self.ckpt_manager = tf.train.CheckpointManager(self.ckpt, self.checkpoint_dir, max_to_keep=3)
@@ -102,9 +102,9 @@ class SimpleEIRNN:
                 grads, _ = tf.clip_by_global_norm(grads, self.grad_clip)
                 self.optimizer.apply_gradients(zip(grads, self.ei_rnn.trainable_weights))
 
-                with self.train_summary_writer.as_default(): #TODO added to debug
-                    cm_image = plot.plot_confusion_matrix(self.get_w_rec_m())
-                    tf.summary.image('M_rec', cm_image, step=epoch_i)
+                # with self.train_summary_writer.as_default():  # TODO added to debug
+                #     cm_image = plot.plot_confusion_matrix(self.get_w_rec_m())
+                #     tf.summary.image('M_rec', cm_image, step=epoch_i)
 
             train_loss_all = train_loss_all / self.batch_num
             print('train loss:', train_loss_all)
@@ -118,7 +118,7 @@ class SimpleEIRNN:
             validation_acc_all = 0
 
             for v_batch_i in range(validation_batch_num):
-                _, v_masks, v_inputs, v_outputs = next(dg)#dg.get_valid_test_datasets()
+                _, v_masks, v_inputs, v_outputs = dg.get_valid_test_datasets()  # dg.get_valid_test_datasets()
                 v_logits, _ = self.ei_rnn(v_inputs, [self.init_state])
 
                 acc_v_logits = v_logits.numpy()
@@ -145,11 +145,14 @@ class SimpleEIRNN:
                 cm_image = plot.plot_confusion_matrix(self.get_w_rec_m())
                 tf.summary.image('M_rec', cm_image, step=epoch_i)
 
-                win_image = plot.plot_confusion_matrix(funs.rectify(self.rnn_cell.W_in.numpy()[:, :int(UNITS_SIZE*EI_RATIO)]), False)
+                win_image = plot.plot_confusion_matrix(
+                    funs.rectify(self.rnn_cell.W_in.numpy()[:, :int(UNITS_SIZE * EI_RATIO)]), False)
                 tf.summary.image('M_in', win_image, step=epoch_i)
 
-                wout_image = plot.plot_confusion_matrix(self.get_w_out_m()[:,:int(UNITS_SIZE*EI_RATIO)], False)
+                wout_image = plot.plot_confusion_matrix(self.get_w_out_m()[:, :int(UNITS_SIZE * EI_RATIO)], False)
                 tf.summary.image('M_out', wout_image, step=epoch_i)
+
+                print('spr: ', funs.spectral_radius(self.get_w_rec_m().T))
 
             if epoch_i > PERFORMANCE_CHECK_REGION and \
                     np.mean(over_all_performace[-PERFORMANCE_CHECK_REGION:]) > PERFORMANCE_LEVEL:
@@ -184,7 +187,7 @@ class SimpleEIRNN:
         dg = DataGenerator(task_version=self.task_version, action='test')  # todo: should be test for action
         psycollection = {'coh': [], 'perc': []}
 
-        for batch_index in range(test_batch_num):
+        for batch_index in range(5):
             descs, test_masks, test_inputs, test_outputs = dg.get_valid_test_datasets()
 
             test_logits, _ = self.ei_rnn(test_inputs, [self.init_state], training=False)
@@ -215,16 +218,17 @@ class SimpleEIRNN:
                 cm_image = plot.plot_confusion_matrix(self.get_w_rec_m())
                 tf.summary.image('M_rec', cm_image, step=batch_index)
 
-                win_image = plot.plot_confusion_matrix(funs.rectify(self.rnn_cell.W_in.numpy()[:, :int(UNITS_SIZE*EI_RATIO)]), False)
+                win_image = plot.plot_confusion_matrix(
+                    funs.rectify(self.rnn_cell.W_in.numpy()[:, :int(UNITS_SIZE * EI_RATIO)]), False)
                 tf.summary.image('M_in', win_image, step=batch_index)
 
-                wout_image = plot.plot_confusion_matrix(self.get_w_out_m()[:,:int(UNITS_SIZE*EI_RATIO)], False)
+                wout_image = plot.plot_confusion_matrix(self.get_w_out_m()[:, :int(UNITS_SIZE * EI_RATIO)], False)
                 tf.summary.image('M_out', wout_image, step=batch_index)
 
     def get_w_rec_m(self):
         return np.dot(self.rnn_cell.Dale_rec.numpy(),
                       np.multiply(self.rnn_cell.M_rec_m, funs.rectify(self.rnn_cell.W_rec_plastic.numpy()))
-                                   + self.rnn_cell.W_fixed_m).T
+                      + self.rnn_cell.W_fixed_m).T
 
     def get_w_out_m(self):
         return np.dot(self.rnn_cell.Dale_out.numpy(), funs.rectify(self.rnn_cell.W_out.numpy())).T
@@ -238,14 +242,16 @@ class SimpleEIRNN:
         self.rnn_cell.set_weights(new_w)
 
     @staticmethod
-    def get_accuracy(logits, outputs,masks): # todo: region may change for fd version
-        batch_num, _ =np.shape(masks)
+    def get_accuracy(logits, outputs, masks):  # todo: region may change for fd version
+        batch_num, _ = np.shape(masks)
         means = 0.
         for index in range(batch_num):
             x = np.argmax(logits[index], axis=1)
             y = np.argmax(outputs[index], axis=1)
             delet_i, = np.where(masks[index] == 0)
-            match = np.delete(np.equal(x,y),delet_i)
+            # if len(delet_i) != 0:
+            #     delet_i = list(range(delet_i[0])) + list(delet_i)
+            match = np.delete(np.equal(x, y), delet_i)
             means += np.mean(match)
         return means / batch_num
 
@@ -277,5 +283,3 @@ ei_rnn.build()
 ei_rnn.train()
 
 """
-
-
