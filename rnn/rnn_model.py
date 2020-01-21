@@ -16,7 +16,7 @@ UNITS_SIZE = 100
 EI_RATIO = 0.8
 X_0 = 0.1
 PERFORMANCE_LEVEL = 0.85
-PERFORMANCE_CHECK_REGION = 3
+PERFORMANCE_CHECK_REGION = 5
 
 
 class SimpleEIRNN:
@@ -59,11 +59,14 @@ class SimpleEIRNN:
     def build(self):
         self.init_state = tf.Variable(tf.ones([SGD_p['minibatch_size'], UNITS_SIZE]) * X_0,
                                       trainable=self.init_state_trainable)
+
+        # self.init_state = tf.Variable(tf.zeros([SGD_p['minibatch_size'], UNITS_SIZE]),
+        #                               trainable=self.init_state_trainable)
+
         self.rnn_cell = rnn_cell.EIRNNCell(UNITS_SIZE, EI_RATIO, action='train')
         self.ei_rnn = keras.layers.RNN(self.rnn_cell, return_sequences=True, return_state=True)
 
-        self.optimizer =  keras.optimizers.SGD(learning_rate=SGD_p['lr']) #keras.optimizers.Adam(learning_rate=SGD_p['lr'])
-
+        self.optimizer = keras.optimizers.SGD(learning_rate=SGD_p['lr'])
         self.ckpt = tf.train.Checkpoint(step=tf.Variable(1), optimizer=self.optimizer, net=self.ei_rnn)
         self.ckpt_manager = tf.train.CheckpointManager(self.ckpt, self.checkpoint_dir, max_to_keep=3)
 
@@ -98,13 +101,10 @@ class SimpleEIRNN:
                     train_loss += sum(self.ei_rnn.losses)
                     train_loss_all += train_loss.numpy()
 
-                grads = tape.gradient(train_loss, self.ei_rnn.trainable_weights)
+                all_weights = self.ei_rnn.trainable_weights+[self.init_state]
+                grads = tape.gradient(train_loss, all_weights)
                 grads, _ = tf.clip_by_global_norm(grads, self.grad_clip)
                 self.optimizer.apply_gradients(zip(grads, self.ei_rnn.trainable_weights))
-
-                # with self.train_summary_writer.as_default():  # TODO added to debug
-                #     cm_image = plot.plot_confusion_matrix(self.get_w_rec_m())
-                #     tf.summary.image('M_rec', cm_image, step=epoch_i)
 
             train_loss_all = train_loss_all / self.batch_num
             print('train loss:', train_loss_all)
@@ -163,12 +163,11 @@ class SimpleEIRNN:
             self.ckpt.step.assign_add(1)
             self.ckpt_manager.save()
 
-            # self.reset_all_weights() # todo: may change
+            # self.reset_all_weights() # todo: may uncomment
             # print('Remove all weights below ' + str(SGD_p['mini_w_threshold']))
             # print('\n')
 
         print('Training is done')
-        print('Remove all weights below ' + str(SGD_p['mini_w_threshold']))
         print('#' * 20)
         print('\n')
         # Test
@@ -187,7 +186,7 @@ class SimpleEIRNN:
         dg = DataGenerator(task_version=self.task_version, action='test')  # todo: should be test for action
         psycollection = {'coh': [], 'perc': []}
 
-        for batch_index in range(5):
+        for batch_index in range(20):
             descs, test_masks, test_inputs, test_outputs = dg.get_valid_test_datasets()
 
             test_logits, _ = self.ei_rnn(test_inputs, [self.init_state], training=False)

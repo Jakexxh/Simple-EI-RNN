@@ -44,18 +44,18 @@ class EIRNNCell(keras.layers.Layer):
 
         self.W_in = self.add_weight(shape=(input_shape[-1], self.units),
                                       initializer=tf.random_uniform_initializer(minval=0, maxval=0.5),
-                                      regularizer=keras.regularizers.l1_l2(regu_l),
+                                      # regularizer=keras.regularizers.l1(regu_l),
                                       name='W_in')
 
         self.W_out = self.add_weight(shape=(self.units, 2),
                                     initializer=tf.random_uniform_initializer(minval=0, maxval=0.5),
-                                    regularizer=keras.regularizers.l1_l2(regu_l),
+                                    # regularizer=keras.regularizers.l1(regu_l),
                                     name='W_out')
 
         self.W_rec_plastic_m = self.glorot_uniform()
         self.W_rec_plastic = self.add_weight(shape=(self.units, self.units),
                                      initializer=tf.constant_initializer(self.W_rec_plastic_m),
-                                     regularizer=keras.regularizers.l1_l2(regu_l),
+                                     # regularizer=keras.regularizers.l1(regu_l),
                                      name='W_rec_plastic')
 
         if M_rec is None:
@@ -72,15 +72,17 @@ class EIRNNCell(keras.layers.Layer):
                                             name='W_fixed',
                                             trainable=False)
 
-        self.rec_scale = self.rho * funs.spectral_radius(np.multiply(self.M_rec_m, self.W_rec_plastic_m)
-                                                         + self.W_fixed_m)
+        #todo: seems need to add division
+        self.rec_scale = self.rho / funs.spectral_radius(np.multiply(self.M_rec_m, self.W_rec_plastic_m)
+                                                        + self.W_fixed_m)
 
-        self.W_rec = self.rec_scale * (tf.multiply(self._M_rec, K.relu(self.W_rec_plastic)) + self._W_fixed)
+         #self.W_rec = self.rec_scale * (tf.multiply(self._M_rec, K.relu(self.W_rec_plastic)) + self._W_fixed)
 
         # Dale
         dale_vec = np.ones(self.units)
-        dale_vec[int(self.ei_ratio * self.units):] = -1 * self.ei_ratio / (1 - self.ei_ratio)
 
+        dale_vec[int(self.ei_ratio * self.units):] = -1 * self.ei_ratio / (1 - self.ei_ratio)
+        # t= np.matmul(np.ones((self.units, self.units)), np.diag(dale_vec))
         rec_dale = np.diag(dale_vec) / np.linalg.norm(
             np.matmul(np.ones((self.units, self.units)), np.diag(dale_vec)), axis=1)[:, np.newaxis] #TODO: may change
 
@@ -107,9 +109,12 @@ class EIRNNCell(keras.layers.Layer):
 
         x_prev = states[0]
 
+        self.W_rec = self.rec_scale * (tf.multiply(self._M_rec, K.relu(self.W_rec_plastic)) + self._W_fixed)
+
         t = K.mean(K.sqrt(K.constant(2.0 * self.alpha * SGD_p['rr_noise_std'] ** 2)) * K.random_normal(K.shape(x_prev)))
         p = K.mean(K.dot(K.relu(x_prev), K.dot(self.Dale_rec, self.W_rec)))
         q= K.mean(K.dot(inputs, K.relu(self.W_in)))
+
         x = ((1 - self.alpha) * x_prev) + \
             self.alpha * (
                 K.dot(K.relu(x_prev), K.dot(self.Dale_rec, self.W_rec)) +
@@ -125,7 +130,7 @@ class EIRNNCell(keras.layers.Layer):
         zz = K.mean(z)
         return z, [x]
 
-    def glorot_uniform(self, scale=0.01): # Todo: try and debug its best scale!!!!!!!!
+    def glorot_uniform(self, scale=0.1): # Todo: try and debug its best scale!!!!!!!!
         limits = np.sqrt(6 / (self.units + self.units))
         uniform = np.random.uniform(-limits,limits,(self.units,self.units)) * scale
         return np.abs(uniform)
